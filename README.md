@@ -100,5 +100,6 @@ pcl.visualize()
 ```
 
 ## Examples
-<p src="img/image_1.png", align="center">
+<p align="center">
+<img src="img/image_1.png"/>
 </p>
