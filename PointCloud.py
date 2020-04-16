@@ -161,6 +161,7 @@ class Cloud:
         cv2.namedWindow(self._configurations)
         cv2.namedWindow(self._flags_input)
         cv2.createTrackbar("Size", self._configurations, 5, 350, self.nothing)
+        cv2.createTrackbar("SkeletonSize", self._configurations, 35, 350, self.nothing)
         cv2.createTrackbar("Red", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Green", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Blue", self._configurations, 255, 255, self.nothing)
@@ -432,8 +433,9 @@ class Cloud:
         if self._skeleton_point_cloud and self._simultaneously_point_cloud:
             # make skeleton point bigger
             self._size = np.zeros(len(self._dynamic_point_cloud), dtype=np.float32)
-            self._size[:] = cv2.getTrackbarPos("Size", "Configs") / 10
-            self._size[-25*len(self._bodies_indexes):] = 25
+            self._size[:] = cv2.getTrackbarPos("Size", self._configurations) / 10
+            if len(self._bodies_indexes) > 0:
+                self._size[-25*len(self._bodies_indexes):] = cv2.getTrackbarPos("SkeletonSize", self._configurations)
             # update the skeleton colors for each different skeleton tracked
             for i in range(len(self._bodies_indexes)):
                 if i == 0:
@@ -444,7 +446,7 @@ class Cloud:
                     self._color[-25*(i+1):-25*i, 0] = self._skeleton_colors[i, 0]
                     self._color[-25*(i+1):-25*i, 1] = self._skeleton_colors[i, 1]
                     self._color[-25*(i+1):-25*i, 2] = self._skeleton_colors[i, 2]
-
+        # update the pyqtgraph cloud
         self._scatter.setData(color=self._color, size=self._size)
 
     def init(self):
@@ -528,8 +530,8 @@ if __name__ == "__main__":
     # pcl = Cloud(dynamic=True, color=True)
     # pcl.visualize()
     # depth camera
-    # pcl = Cloud(dynamic=True, depth=True)
-    # pcl.visualize()
+    pcl = Cloud(dynamic=True, depth=True)
+    pcl.visualize()
     # body index
     # pcl = Cloud(dynamic=True, body=True)
     # pcl.visualize()
@@ -545,5 +547,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
     # pcl.visualize()
-    pcl = Cloud(dynamic=True, simultaneously=True, depth=False, color=False, body=True, skeleton=True)
-    pcl.visualize()
+    # pcl = Cloud(dynamic=True, simultaneously=True, depth=False, color=False, body=True, skeleton=True)
+    # pcl.visualize()
