@@ -14,6 +14,7 @@ from pykinect2 import PyKinectRuntime
 import mapper
 import time
 import cv2
+from cv2 import WINDOW_NORMAL
 import sys
 import os
 import ctypes
@@ -36,12 +37,6 @@ class Cloud:
         """
         # Initialize Kinect object
         self._kinect = PyKinectRuntime.PyKinectRuntime(PyKinectV2.FrameSourceTypes_Color|PyKinectV2.FrameSourceTypes_Depth|PyKinectV2.FrameSourceTypes_Body|PyKinectV2.FrameSourceTypes_BodyIndex)
-        # Create window for track bars
-        cv2.namedWindow('Configurations')
-        cv2.createTrackbar("Size", "Configurations", 5, 500, self.nothing)
-        cv2.createTrackbar("Red", "Configurations", 255, 255, self.nothing)
-        cv2.createTrackbar("Green", "Configurations", 255, 255, self.nothing)
-        cv2.createTrackbar("Blue", "Configurations", 255, 255, self.nothing)
         self._body_index = None  # save body index image
         self._body_index_points = None  # save body index points
         self._cloud = False  # Flag to break loop when creating a pointcloud
@@ -70,25 +65,18 @@ class Cloud:
         self._body_point_cloud_points = None  # store body cloud points for simultaneously showing
         self._skeleton_point_cloud_points = None  # store skeleton cloud points for simultaneously showing
         self._simultaneously_point_cloud_points = None  # stack all the points
+        self._skeleton_colors = np.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 1]], dtype=np.float32)  # skeleton color pallet
         self._app = QtGui.QApplication([])  # Initialize app
         self._w = gl.GLViewWidget()  # Initialize view widget
-        # Change view for each point cloud
-        if self._depth_point_cloud or self._body_index_cloud or not self._dynamic or self._color_point_cloud:
-            self._w.orbit(225, -30)
-        if self._skeleton_point_cloud:
-            self._w.orbit(225, -10)
-        if self._simultaneously_point_cloud:
-            if self._depth_point_cloud and self._skeleton_point_cloud:
-                self._w.orbit(-60, 10)
-            else:
-                self._w.orbit(0, 0)
-        # self._w.pan(0, -2000, 0)
+        # Change view point
+        self._w.orbit(225, -30)
+        # self._w.pan(0, -2000, 0)  # make the camera fixed to a point
         # self._w.opts['viewport'] = (0, 0, 960, 540)
         self._w.showMaximized()  # show window maximized
         # self._w.setMaximumSize(960, 540)
         self._w.setWindowTitle('Kinect PointCloud')  # window title
         self._w.show()  # show app
-        # self._g = gl.GLGridItem()
+        # self._g = gl.GLGridItem()  # adds a grid to the 3d space
         # self._g.setSize(x=1500, y=1500, z=1500)
         # self._w.addItem(self._g)
         self._scatter = None  # Store GL Scatter handler
@@ -97,6 +85,9 @@ class Cloud:
         self._start = True  # Flag for saving the main loop status
         self._start_gui = False  # Flag for stopping the main loop and exit when close
         self._dynamic_point_cloud = None  # Store the calculated point cloud points
+        self._configurations = "configurations_input_window"  # cv2 window name for color and size
+        self._flags_input = "flags_input_windows"  # cv2 window name for flags input point clouds
+        self.create_track_bars()  # create track bars
         # check for multiple input flags or no input flags when using dynamic point cloud only
         if not self._simultaneously_point_cloud:
             if any([self._color_point_cloud and self._depth_point_cloud and self._body_index_cloud and self._skeleton_point_cloud,
@@ -164,6 +155,31 @@ class Cloud:
             else:
                 print('[CloudPoint] Input has no valid file extension')
             sys.exit()
+
+    def create_track_bars(self):
+        # Create window for track bars
+        cv2.namedWindow(self._configurations)
+        cv2.namedWindow(self._flags_input)
+        cv2.createTrackbar("Size", self._configurations, 5, 350, self.nothing)
+        cv2.createTrackbar("Red", self._configurations, 255, 255, self.nothing)
+        cv2.createTrackbar("Green", self._configurations, 255, 255, self.nothing)
+        cv2.createTrackbar("Blue", self._configurations, 255, 255, self.nothing)
+        cv2.createTrackbar("Color Cloud", self._flags_input, 0, 1, self.nothing)
+        cv2.createTrackbar("Depth Cloud", self._flags_input, 0, 1, self.nothing)
+        cv2.createTrackbar("Body Cloud", self._flags_input, 0, 1, self.nothing)
+        cv2.createTrackbar("Skeleton Cloud", self._flags_input, 0, 1, self.nothing)
+        cv2.createTrackbar("Simultaneously", self._flags_input, 0, 1, self.nothing)
+        # update the positions
+        if self._color_point_cloud:
+            cv2.setTrackbarPos("Color Cloud", self._flags_input, 1)
+        if self._depth_point_cloud:
+            cv2.setTrackbarPos("Depth Cloud", self._flags_input, 1)
+        if self._body_index_cloud:
+            cv2.setTrackbarPos("Body Cloud", self._flags_input, 1)
+        if self._skeleton_point_cloud:
+            cv2.setTrackbarPos("Skeleton Cloud", self._flags_input, 1)
+        if self._simultaneously_point_cloud:
+            cv2.setTrackbarPos("Simultaneously", self._flags_input, 1)
 
     def nothing(self, x):
         """
@@ -277,10 +293,21 @@ class Cloud:
         :return None
         """
         # Get track bar values
-        self._size = cv2.getTrackbarPos("Size", "Configurations") / 10
-        self._red = cv2.getTrackbarPos("Red", "Configurations")
-        self._green = cv2.getTrackbarPos("Green", "Configurations")
-        self._blue = cv2.getTrackbarPos("Blue", "Configurations")
+        self._size = cv2.getTrackbarPos("Size", self._configurations) / 10
+        self._red = cv2.getTrackbarPos("Red", self._configurations)
+        self._green = cv2.getTrackbarPos("Green", self._configurations)
+        self._blue = cv2.getTrackbarPos("Blue", self._configurations)
+        # update the input track bar positions
+        color = cv2.getTrackbarPos("Color Cloud", self._flags_input)
+        depth = cv2.getTrackbarPos("Depth Cloud", self._flags_input)
+        body = cv2.getTrackbarPos("Body Cloud", self._flags_input)
+        skeleton = cv2.getTrackbarPos("Skeleton Cloud", self._flags_input)
+        simultaneously = cv2.getTrackbarPos("Simultaneously", self._flags_input)
+        self._color_point_cloud = True if color == 1 else False
+        self._simultaneously_point_cloud = True if simultaneously == 1 else False
+        self._depth_point_cloud = True if depth == 1 else False
+        self._body_index_cloud = True if body == 1 else False
+        self._skeleton_point_cloud = True if skeleton == 1 else False
 
         # only for dynamic pointcloud
         if self._dynamic:
@@ -399,6 +426,25 @@ class Cloud:
         self._color[:, 1] = self._green / 255
         self._color[:, 2] = self._blue / 255
         self._color[:, 3] = 1.0  # opacity
+
+        # update the skeleton color and size for simultaneously point cloud
+        # for better visualization
+        if self._skeleton_point_cloud and self._simultaneously_point_cloud:
+            # make skeleton point bigger
+            self._size = np.zeros(len(self._dynamic_point_cloud), dtype=np.float32)
+            self._size[:] = cv2.getTrackbarPos("Size", "Configs") / 10
+            self._size[-25*len(self._bodies_indexes):] = 25
+            # update the skeleton colors for each different skeleton tracked
+            for i in range(len(self._bodies_indexes)):
+                if i == 0:
+                    self._color[-25:, 0] = self._skeleton_colors[i, 0]
+                    self._color[-25:, 1] = self._skeleton_colors[i, 1]
+                    self._color[-25:, 2] = self._skeleton_colors[i, 2]
+                else:
+                    self._color[-25*(i+1):-25*i, 0] = self._skeleton_colors[i, 0]
+                    self._color[-25*(i+1):-25*i, 1] = self._skeleton_colors[i, 1]
+                    self._color[-25*(i+1):-25*i, 2] = self._skeleton_colors[i, 2]
+
         self._scatter.setData(color=self._color, size=self._size)
 
     def init(self):
@@ -462,7 +508,7 @@ if __name__ == "__main__":
     and save it to that file.txt.
     It can also view .pcd and .ply files.
     """
-    # pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt')
+    # pcl = Cloud(file='Models/PointCloud/test_cloud_2.txt')
     # pcl.visualize()
     # pcd or ply files open with the Open3D library
     # pcl = Cloud(file='Models/PointCloud/model.pcd')
@@ -492,11 +538,6 @@ if __name__ == "__main__":
     # pcl.visualize()
     """
     # You can also visualize the clouds simultaneously in any order.
-    # Also the skeleton Point Cloud doesn't work good with other Point Clouds. !!!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!! Keep in mind that when using the skeleton=True simultaneously with other clouds you have to !!!
-    !!! scroll out first to see the combined point cloud. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     """
     # pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
     # pcl.visualize()
@@ -504,3 +545,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
     # pcl.visualize()
+    pcl = Cloud(dynamic=True, simultaneously=True, depth=False, color=False, body=True, skeleton=True)
+    pcl.visualize()
