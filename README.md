@@ -45,16 +45,23 @@ For viewing a point cloud text file with:
 (world point coordinates)                                                              
 If the file with the name does not exists it will create a point cloud with kinect and save it to that file.txt. It can also view .pcd and .ply files. I have uploaded some pointcloud files in the models/ directory for testing purposes.
 ```
+# viewing a .txt file
 pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt')
 pcl.visualize()
+
+#viewing .ply or .pcd files
 # .pcd or .ply files open with the Open3D library
 pcl = Cloud(file='Models/PointCloud/model.pcd')
 pcl = Cloud(file='Models/PointCloud/Car.ply')
 ```
 If the files doesn't exist then you have to specify from which sensor camera you want the pointcloud to be created and saved with that file name.
+The color point cloud is slower than the depth point cloud due to more points generated and written to the file.
 ```
+# Creating a PoinCloud with the depth camera
 pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', depth=True)
 pcl.visualize()
+
+# Creating a pointcloud with the color camera
 pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
 pcl.visualize()
 ```
@@ -63,12 +70,15 @@ For dynamically creating and viewing the PointCloud.
 # rgb camera
 pcl = Cloud(dynamic=True, color=True)
 pcl.visualize()
+
 # depth camera
 pcl = Cloud(dynamic=True, depth=True)
 pcl.visualize()
+
 # body index
 pcl = Cloud(dynamic=True, body=True)
 pcl.visualize()
+
 # skeleton cloud
 pcl = Cloud(dynamic=True, skeleton=True)
 pcl.visualize()
@@ -79,9 +89,11 @@ Keep in mind that the skeleton Point Cloud doesn't work good with other Point Cl
 # example 1 with color and depth point clouds
 pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
 pcl.visualize()
+
 # example 2 with all the point clouds enabled (scroll out to see the point cloud)
 pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=True, body=True, skeleton=True)
 pcl.visualize()
+
 # example 3 with depth and body index point cloud
 pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
 pcl.visualize()
