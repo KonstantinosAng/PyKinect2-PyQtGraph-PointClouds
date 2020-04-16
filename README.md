@@ -103,3 +103,12 @@ pcl.visualize()
 <p align="center">
 <img src="img/image_1.png"/>
 </p>
+<p>
+<img src="img/image_2.png"/>
+</p>
+<p>
+<img src="img/image_3.png"/>
+</p>
+<p>
+<img src="img/iamge_4.png"/>
+</p>
