@@ -14,7 +14,7 @@ from pykinect2 import PyKinectRuntime
 import mapper
 import time
 import cv2
-from cv2 import WINDOW_NORMAL
+from cv2 import WINDOW_FREERATIO
 import sys
 import os
 import ctypes
@@ -86,7 +86,6 @@ class Cloud:
         self._start_gui = False  # Flag for stopping the main loop and exit when close
         self._dynamic_point_cloud = None  # Store the calculated point cloud points
         self._configurations = "configurations_input_window"  # cv2 window name for color and size
-        self._flags_input = "flags_input_windows"  # cv2 window name for flags input point clouds
         self.create_track_bars()  # create track bars
         # check for multiple input flags or no input flags when using dynamic point cloud only
         if not self._simultaneously_point_cloud:
@@ -158,29 +157,28 @@ class Cloud:
 
     def create_track_bars(self):
         # Create window for track bars
-        cv2.namedWindow(self._configurations)
-        cv2.namedWindow(self._flags_input)
+        cv2.namedWindow(self._configurations, WINDOW_FREERATIO)
         cv2.createTrackbar("Size", self._configurations, 5, 350, self.nothing)
         cv2.createTrackbar("SkeletonSize", self._configurations, 35, 350, self.nothing)
         cv2.createTrackbar("Red", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Green", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Blue", self._configurations, 255, 255, self.nothing)
-        cv2.createTrackbar("Color Cloud", self._flags_input, 0, 1, self.nothing)
-        cv2.createTrackbar("Depth Cloud", self._flags_input, 0, 1, self.nothing)
-        cv2.createTrackbar("Body Cloud", self._flags_input, 0, 1, self.nothing)
-        cv2.createTrackbar("Skeleton Cloud", self._flags_input, 0, 1, self.nothing)
-        cv2.createTrackbar("Simultaneously", self._flags_input, 0, 1, self.nothing)
+        cv2.createTrackbar("Color Cloud", self._configurations, 0, 1, self.nothing)
+        cv2.createTrackbar("Depth Cloud", self._configurations, 0, 1, self.nothing)
+        cv2.createTrackbar("Body Cloud", self._configurations, 0, 1, self.nothing)
+        cv2.createTrackbar("Skeleton Cloud", self._configurations, 0, 1, self.nothing)
+        cv2.createTrackbar("Simultaneously", self._configurations, 0, 1, self.nothing)
         # update the positions
         if self._color_point_cloud:
-            cv2.setTrackbarPos("Color Cloud", self._flags_input, 1)
+            cv2.setTrackbarPos("Color Cloud", self._configurations, 1)
         if self._depth_point_cloud:
-            cv2.setTrackbarPos("Depth Cloud", self._flags_input, 1)
+            cv2.setTrackbarPos("Depth Cloud", self._configurations, 1)
         if self._body_index_cloud:
-            cv2.setTrackbarPos("Body Cloud", self._flags_input, 1)
+            cv2.setTrackbarPos("Body Cloud", self._configurations, 1)
         if self._skeleton_point_cloud:
-            cv2.setTrackbarPos("Skeleton Cloud", self._flags_input, 1)
+            cv2.setTrackbarPos("Skeleton Cloud", self._configurations, 1)
         if self._simultaneously_point_cloud:
-            cv2.setTrackbarPos("Simultaneously", self._flags_input, 1)
+            cv2.setTrackbarPos("Simultaneously", self._configurations, 1)
 
     def nothing(self, x):
         """
@@ -299,11 +297,11 @@ class Cloud:
         self._green = cv2.getTrackbarPos("Green", self._configurations)
         self._blue = cv2.getTrackbarPos("Blue", self._configurations)
         # update the input track bar positions
-        color = cv2.getTrackbarPos("Color Cloud", self._flags_input)
-        depth = cv2.getTrackbarPos("Depth Cloud", self._flags_input)
-        body = cv2.getTrackbarPos("Body Cloud", self._flags_input)
-        skeleton = cv2.getTrackbarPos("Skeleton Cloud", self._flags_input)
-        simultaneously = cv2.getTrackbarPos("Simultaneously", self._flags_input)
+        color = cv2.getTrackbarPos("Color Cloud", self._configurations)
+        depth = cv2.getTrackbarPos("Depth Cloud", self._configurations)
+        body = cv2.getTrackbarPos("Body Cloud", self._configurations)
+        skeleton = cv2.getTrackbarPos("Skeleton Cloud", self._configurations)
+        simultaneously = cv2.getTrackbarPos("Simultaneously", self._configurations)
         self._color_point_cloud = True if color == 1 else False
         self._simultaneously_point_cloud = True if simultaneously == 1 else False
         self._depth_point_cloud = True if depth == 1 else False
@@ -421,6 +419,7 @@ class Cloud:
 
             # scatter the calculated points
             self._scatter.setData(pos=self._dynamic_point_cloud)
+
         # update the color and size of the points based on the track bars
         self._color = np.zeros((len(self._dynamic_point_cloud), 4), dtype=np.float32)
         self._color[:, 0] = self._red / 255
@@ -433,7 +432,7 @@ class Cloud:
         if self._skeleton_point_cloud and self._simultaneously_point_cloud:
             # make skeleton point bigger
             self._size = np.zeros(len(self._dynamic_point_cloud), dtype=np.float32)
-            self._size[:] = cv2.getTrackbarPos("Size", self._configurations) / 10
+            self._size[:] = self._size / 10
             if len(self._bodies_indexes) > 0:
                 self._size[-25*len(self._bodies_indexes):] = cv2.getTrackbarPos("SkeletonSize", self._configurations)
             # update the skeleton colors for each different skeleton tracked
@@ -446,6 +445,7 @@ class Cloud:
                     self._color[-25*(i+1):-25*i, 0] = self._skeleton_colors[i, 0]
                     self._color[-25*(i+1):-25*i, 1] = self._skeleton_colors[i, 1]
                     self._color[-25*(i+1):-25*i, 2] = self._skeleton_colors[i, 2]
+
         # update the pyqtgraph cloud
         self._scatter.setData(color=self._color, size=self._size)
 
@@ -530,8 +530,8 @@ if __name__ == "__main__":
     # pcl = Cloud(dynamic=True, color=True)
     # pcl.visualize()
     # depth camera
-    pcl = Cloud(dynamic=True, depth=True)
-    pcl.visualize()
+    # pcl = Cloud(dynamic=True, depth=True)
+    # pcl.visualize()
     # body index
     # pcl = Cloud(dynamic=True, body=True)
     # pcl.visualize()
@@ -547,5 +547,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
     # pcl.visualize()
-    # pcl = Cloud(dynamic=True, simultaneously=True, depth=False, color=False, body=True, skeleton=True)
-    # pcl.visualize()
+    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True)
+    pcl.visualize()
