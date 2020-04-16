@@ -12,7 +12,7 @@ x, y, z
 x, y, z
 
 It can also be used to view .ply or .pcd point cloud files. Instructions on how to use the main file are written in the **Instructions** chapter.
-In addition, there are 4 track bars created with opencv that can be used to dynamically change the color and the size of the points in the point cloud.
+In addition, there are 2 windows with opencv track bars that can be used to dynamically change the color and the size of the points in the point cloud.
 ## Requirements
 Install all requirements using the following command:
 ```
