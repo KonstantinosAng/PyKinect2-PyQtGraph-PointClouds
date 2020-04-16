@@ -45,18 +45,18 @@ For viewing a point cloud text file with:
 (world point coordinates)                                                              
 If the file with the name does not exists it will create a point cloud with kinect and save it to that file.txt. It can also view .pcd and .ply files. I have uploaded some pointcloud files in the models/ directory for testing purposes.
 ```
-    pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt')
-    pcl.visualize()
-    # .pcd or .ply files open with the Open3D library
-    pcl = Cloud(file='Models/PointCloud/model.pcd')
-    pcl = Cloud(file='Models/PointCloud/Car.ply')
+pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt')
+pcl.visualize()
+# .pcd or .ply files open with the Open3D library
+pcl = Cloud(file='Models/PointCloud/model.pcd')
+pcl = Cloud(file='Models/PointCloud/Car.ply')
 ```
 If the files doesn't exist then you have to specify from which sensor camera you want the pointcloud to be created and saved with that file name.
 ```
-    pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', depth=True)
-    pcl.visualize()
-    pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
-    pcl.visualize()
+pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', depth=True)
+pcl.visualize()
+pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
+pcl.visualize()
 ```
     """
     For dynamically creating the PointCloud and viewing the PointCloud.
