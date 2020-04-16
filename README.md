@@ -48,14 +48,13 @@ It can also view .pcd and .ply files. I have uploaded some pointcloud files in t
     pcl = Cloud(file='Models/PointCloud/model.pcd')
     pcl = Cloud(file='Models/PointCloud/Car.ply')
 ```
-    """
-    If the files doesn't exist then you have to specify from which sensor camera you want 
-    the pointcloud to be created and saved with that file name.
-    """
-    # pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', depth=True)
-    # pcl.visualize()
-    # pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
-    # pcl.visualize()
+If the files doesn't exist then you have to specify from which sensor camera you want the pointcloud to be created and saved with that file name.
+```
+    pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', depth=True)
+    pcl.visualize()
+    pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
+    pcl.visualize()
+```
     """
     For dynamically creating the PointCloud and viewing the PointCloud.
     """
