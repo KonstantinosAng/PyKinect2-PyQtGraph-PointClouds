@@ -74,11 +74,7 @@ pcl = Cloud(dynamic=True, skeleton=True)
 pcl.visualize()
 ```
 You can also visualize the clouds simultaneously in any order.
-Also the skeleton Point Cloud doesn't work good with other Point Clouds. !!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!! Keep in mind that when using the skeleton=True simultaneously with other clouds you have to !!!
-!!! scroll out first to see the combined point cloud. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Keep in mind that the skeleton Point Cloud doesn't work good with other Point Clouds and if used simultaneously with other clouds you have to scroll out enough to see the combined point cloud. But the combined point cloud is not aligned.
 ```
 # example 1 with color and depth point clouds
 pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
