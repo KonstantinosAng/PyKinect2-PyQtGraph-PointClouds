@@ -4,8 +4,6 @@ Creating real-time dynamic Point Clouds using PyQtGraph and PyKinect2.
 ## Description
 The PointCloud.py file contains the main file to produce dynamic Point Clouds using the [PyKinect2](https://github.com/Kinect/PyKinect2) and the [PyQtGraph](https://github.com/pyqtgraph/pyqtgraph) libraries.
 
-## Instructions
-
 ## Requirements
 Install all requirements from requirements.txt using the following command
 ```
@@ -25,4 +23,6 @@ Full list of **all** requirements
 ```
 
 Another dependecy is the [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions) file that I created and handles the ICoordanteMapper functions. Download the file and place it in the same directory as the PointCloud.py file.
+
+## Instructions
 
