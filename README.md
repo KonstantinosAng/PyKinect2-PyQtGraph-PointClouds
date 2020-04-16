@@ -58,7 +58,7 @@ pcl.visualize()
 pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
 pcl.visualize()
 ```
-For dynamically creating the PointCloud and viewing the PointCloud.
+For dynamically creating and viewing the PointCloud.
 ```
 # rgb camera
 pcl = Cloud(dynamic=True, color=True)
@@ -73,17 +73,20 @@ pcl.visualize()
 pcl = Cloud(dynamic=True, skeleton=True)
 pcl.visualize()
 ```
-    # You can also visualize the clouds simultaneously in any order.
-    # Also the skeleton Point Cloud doesn't work good with other Point Clouds. !!!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!! Keep in mind that when using the skeleton=True simultaneously with other clouds you have to !!!
-    !!! scroll out first to see the combined point cloud. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    """
-    # pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
-    # pcl.visualize()
-    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=True, body=True, skeleton=True)
-    # pcl.visualize()
-    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
-    # pcl.visualize()
+You can also visualize the clouds simultaneously in any order.
+Also the skeleton Point Cloud doesn't work good with other Point Clouds. !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! Keep in mind that when using the skeleton=True simultaneously with other clouds you have to !!!
+!!! scroll out first to see the combined point cloud. !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+# example 1 with color and depth point clouds
+pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
+pcl.visualize()
+# example 2 with all the point clouds enabled (scroll out to see the point cloud)
+pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=True, body=True, skeleton=True)
+pcl.visualize()
+# example 3 with depth and body index point cloud
+pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
+pcl.visualize()
 ```
