@@ -14,11 +14,11 @@ x, y, z
 It can also be used to view .ply or .pcd point cloud files. Instructions on how to use the main file are written in the **Instructions** chapter.
 In addition, there are 4 track bars created with opencv that can be used to dynamically change the color and the size of the points in the point cloud.
 ## Requirements
-Install all requirements from requirements.txt using the following command
+Install all requirements using the following command:
 ```
 pip install requirement
 ```
-Full list of **all** requirements
+Full list of **all** requirements.
 ```
 * pyqtgraph==0.10.0
 * numpy==1.18.2
@@ -30,7 +30,7 @@ Full list of **all** requirements
 * os (already installed with Python)
 * ctypes (already installed with Python)
 ```
-
+B
 Another dependecy is the [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions) file that I created and handles the ICoordanteMapper functions. Download the file and place it in the same directory as the PointCloud.py file. The main file is tested with [Python 3.6.8](https://www.python.org/downloads/release/python-368/).
 
 ## Instructions
