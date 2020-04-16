@@ -100,3 +100,4 @@ pcl.visualize()
 ```
 
 ## Examples
+[Image Example 1](img/image_1.png)
