@@ -24,5 +24,5 @@ Full list of **all** requirements
 * ctypes (already installed with Python)
 ```
 
-Another dependecy is the mapper.py file that I created and handles the ICoordanteMapper functions. It is located in [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions)
+Another dependecy is the [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions) file that I created and handles the ICoordanteMapper functions. Download the file and place it in the same directory as the PointCloud.py file.
 
