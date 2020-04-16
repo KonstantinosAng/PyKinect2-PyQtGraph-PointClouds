@@ -9,12 +9,14 @@ The PointCloud.py file contains the main file to produce dynamic Point Clouds us
 ## Requirements
 Install all requirements from requirements.txt using the following command
 ```
-pip install -r requirements.txt --no-index --find-links file:///tmp/packages
+pip install requirement
 ```
 Full list of **all** requirements
 ```
-* ctypes
-* numpy==1.18.1
+* pyqtgraph==0.10.0
+* numpy==1.18.2
 * pykinect2==0.1.0
+* opencv-python==4.2.0.34
+* open3d-python==0.7.0.0
 ```
 
