@@ -51,18 +51,18 @@ pcl.visualize()
 
 #viewing .ply or .pcd files
 # .pcd or .ply files open with the Open3D library
-pcl = Cloud(file='Models/PointCloud/model.pcd')
-pcl = Cloud(file='Models/PointCloud/Car.ply')
+pcl = Cloud(file='models/model.pcd')
+pcl = Cloud(file='models/Car.ply')
 ```
 If the files doesn't exist then you have to specify from which sensor camera you want the pointcloud to be created and saved with that file name.
 The color point cloud is slower than the depth point cloud due to more points generated and written to the file.
 ```
 # Creating a PoinCloud with the depth camera
-pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', depth=True)
+pcl = Cloud(file='models/cloud_test_1.txt', depth=True)
 pcl.visualize()
 
 # Creating a pointcloud with the color camera
-pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
+pcl = Cloud(file='models/cloud_test_2.txt', color=True)
 pcl.visualize()
 ```
 For dynamically creating and viewing the PointCloud.
