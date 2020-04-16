@@ -98,3 +98,5 @@ pcl.visualize()
 pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
 pcl.visualize()
 ```
+
+## Examples
