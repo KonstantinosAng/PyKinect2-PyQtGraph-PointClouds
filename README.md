@@ -25,10 +25,10 @@ Full list of **all** requirements.
 * pykinect2==0.1.0
 * opencv-python==4.2.0.34
 * open3d-python==0.7.0.0
-* time (already installed with Python)
-* sys (already installed with Python)
-* os (already installed with Python)
-* ctypes (already installed with Python)
+* time (already installed with Python3)
+* sys (already installed with Python3)
+* os (already installed with Python3)
+* ctypes (already installed with Python3)
 ```
 B
 Another dependecy is the [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions) file that I created and handles the ICoordanteMapper functions. Download the file and place it in the same directory as the PointCloud.py file. The main file is tested with [Python 3.6.8](https://www.python.org/downloads/release/python-368/).
