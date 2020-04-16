@@ -18,5 +18,11 @@ Full list of **all** requirements
 * pykinect2==0.1.0
 * opencv-python==4.2.0.34
 * open3d-python==0.7.0.0
+* time (already installed with Python)
+* sys (already installed with Python)
+* os (already installed with Python)
+* ctypes (already installed with Python)
 ```
+
+Another dependecy is the mapper.py file that I created and handles the ICoordanteMapper functions. It is located in [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions)
 
