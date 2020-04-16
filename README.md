@@ -34,22 +34,22 @@ Full list of **all** requirements
 Another dependecy is the [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions) file that I created and handles the ICoordanteMapper functions. Download the file and place it in the same directory as the PointCloud.py file.
 
 ## Instructions
+For viewing a point cloud text file with:                                              
+    x, y, z                                                                            
+    ....                                                                               
+    x, y, z                                                                            
+(world point coordinates)                                                              
+If the file with the name does not exists it will create a point cloud with kinect     
+and save it to that file.txt.                                                          
+It can also view .pcd and .ply files.
+I have uploaded some pointcloud files in the models/ directory for testing purposes.
 ```
-    """
-    For viewing a point cloud text file with: 
-        x, y, z
-        ....
-        x, y, z
-    (world point coordinates)
-    If the file with the name does not exists it will create a point cloud with kinect
-    and save it to that file.txt.
-    It can also view .pcd and .ply files.
-    """
-    # pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt')
-    # pcl.visualize()
-    # pcd or ply files open with the Open3D library
-    # pcl = Cloud(file='Models/PointCloud/model.pcd')
-    # pcl = Cloud(file='Models/PointCloud/Car.ply')
+    pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt')
+    pcl.visualize()
+    # .pcd or .ply files open with the Open3D library
+    pcl = Cloud(file='Models/PointCloud/model.pcd')
+    pcl = Cloud(file='Models/PointCloud/Car.ply')
+```
     """
     If the files doesn't exist then you have to specify from which sensor camera you want 
     the pointcloud to be created and saved with that file name.
