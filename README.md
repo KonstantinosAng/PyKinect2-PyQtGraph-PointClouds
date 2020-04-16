@@ -1,7 +1,7 @@
 # PyKinect2-PyQtGraph-PointClouds
 Creating real-time dynamic Point Clouds using PyQtGraph and PyKinect2.
 
-## Description
+B## Description
 The PointCloud.py file contains the main class to produce dynamic Point Clouds using the [PyKinect2](https://github.com/Kinect/PyKinect2) and the [PyQtGraph](https://github.com/pyqtgraph/pyqtgraph) libraries.
 The main file uses the numpy library that runs in C, thus it is fully optimized and can produce dynamic Point Clouds with up to 60+ frames, except for the point clouds produces by the RGB camera that run in 10+ frames.
 The library can also be used to create PointCloud and save them as a .txt file containing the world point coordinates as: 
@@ -62,7 +62,7 @@ pcl = Cloud(file='models/cloud_test_1.txt', depth=True)
 pcl.visualize()
 
 # Creating a pointcloud with the color camera
-pcl = Cloud(file='models/cloud_test_2.txt', color=True)
+Bpcl = Cloud(file='models/cloud_test_2.txt', color=True)
 pcl.visualize()
 ```
 For dynamically creating and viewing the PointCloud.
@@ -84,7 +84,6 @@ pcl = Cloud(dynamic=True, skeleton=True)
 pcl.visualize()
 ```
 You can also visualize the clouds simultaneously in any order.
-Keep in mind that the skeleton Point Cloud doesn't work good with other Point Clouds and if used simultaneously with other clouds you have to scroll out enough to see the combined point cloud and it will not be aligned.
 ```
 # example 1 with color and depth point clouds
 pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
@@ -98,6 +97,8 @@ pcl.visualize()
 pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
 pcl.visualize()
 ```
+
+In addition, there are 2 windows with trackbars to change the input flags, the color and point size of the cloud without closing the app.
 
 ## Examples
 <p align="center">
