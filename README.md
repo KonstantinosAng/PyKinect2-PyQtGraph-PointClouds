@@ -105,4 +105,6 @@ In addition, there are 2 windows with trackbars to change the input flags, the c
 <img src="img/image_2.png"/>
 <img src="img/image_3.png"/>
 <img src="img/image_4.png"/>
+<img src="img/image_5.png"/>
+<img src="img/image_6.png"/>
 </p>
