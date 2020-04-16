@@ -34,6 +34,10 @@ Full list of **all** requirements
 Another dependecy is the [mapper](https://github.com/KonstantinosAng/PyKinect2-Mapper-Functions) file that I created and handles the ICoordanteMapper functions. Download the file and place it in the same directory as the PointCloud.py file. The main file is tested with [Python 3.6.8](https://www.python.org/downloads/release/python-368/).
 
 ## Instructions
+First import the main class as:
+```
+from PointCloud import Cloud
+```
 For viewing a point cloud text file with:                                              
     x, y, z                                                                            
     ....                                                                               
