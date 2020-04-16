@@ -46,7 +46,7 @@ For viewing a point cloud text file with:
 If the file with the name does not exists it will create a point cloud with kinect and save it to that file.txt. It can also view .pcd and .ply files. I have uploaded some pointcloud files in the models/ directory for testing purposes.
 ```
 # viewing a .txt file
-pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt')
+pcl = Cloud(file='models/test_cloud_4.txt')
 pcl.visualize()
 
 #viewing .ply or .pcd files
