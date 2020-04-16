@@ -100,4 +100,5 @@ pcl.visualize()
 ```
 
 ## Examples
-[Image Example 1](img/image_1.png)
+<p src="img/image_1.png", align="center">
+</p>
