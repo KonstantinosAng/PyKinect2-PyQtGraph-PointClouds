@@ -529,18 +529,18 @@ if __name__ == "__main__":
     and save it to that file.txt.
     It can also view .pcd and .ply files.
     """
-    # pcl = Cloud(file='Models/PointCloud/points.txt')
+    # pcl = Cloud(file='models/test_cloud_6.txt')
     # pcl.visualize()
     # pcd or ply files open with the Open3D library
-    # pcl = Cloud(file='Models/PointCloud/model.pcd')
-    # pcl = Cloud(file='Models/PointCloud/Car.ply')
+    # pcl = Cloud(file='models/model.pcd')
+    # pcl = Cloud(file='models/Car.ply')
     """
     If the files doesn't exist then you have to specify from which sensor camera you want 
     the pointcloud to be created and saved with that file name.
     """
-    # pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', depth=True)
+    # pcl = Cloud(file='models/test_cloud_7.txt', depth=True)
     # pcl.visualize()
-    # pcl = Cloud(file='Models/PointCloud/test_cloud_4.txt', color=True)
+    # pcl = Cloud(file='models/test_cloud_8.txt', color=True)
     # pcl.visualize()
     """
     For dynamically creating the PointCloud and viewing the PointCloud.
