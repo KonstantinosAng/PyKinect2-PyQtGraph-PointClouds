@@ -46,6 +46,7 @@ class Cloud:
         self._green = 0  # Store green value from cv2 track bar
         self._blue = 0  # Store blue value from cv2 track bar
         self._size = 0.5  # Store value of point size from cv2 track bar
+        self._opacity = 0  # store opacity value of colors from cv2 track bar
         self._dt = .0  # Store time value since kinect started from cv2 track bar
         self._skeleton_points = None  # store multiple skeleton points
         self._color_point_cloud = color  # Flag to show dynamic point cloud using the color frame
@@ -65,6 +66,8 @@ class Cloud:
         self._body_point_cloud_points = None  # store body cloud points for simultaneously showing
         self._skeleton_point_cloud_points = None  # store skeleton cloud points for simultaneously showing
         self._simultaneously_point_cloud_points = None  # stack all the points
+        self._kinect_distance_from_plane = None  # store kinect's distance from plane
+        self._kinect_tilt = None  # store kinect's tilt angle
         self._skeleton_colors = np.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 1]], dtype=np.float32)  # skeleton color pallet
         self._app = QtGui.QApplication([])  # Initialize app
         self._w = gl.GLViewWidget()  # Initialize view widget
@@ -163,6 +166,7 @@ class Cloud:
         cv2.createTrackbar("Red", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Green", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Blue", self._configurations, 255, 255, self.nothing)
+        cv2.createTrackbar("Opacity", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Color Cloud", self._configurations, 0, 1, self.nothing)
         cv2.createTrackbar("Depth Cloud", self._configurations, 0, 1, self.nothing)
         cv2.createTrackbar("Body Cloud", self._configurations, 0, 1, self.nothing)
@@ -296,6 +300,7 @@ class Cloud:
         self._red = cv2.getTrackbarPos("Red", self._configurations)
         self._green = cv2.getTrackbarPos("Green", self._configurations)
         self._blue = cv2.getTrackbarPos("Blue", self._configurations)
+        self._opacity = cv2.getTrackbarPos("Opacity", self._configurations)
         # update the input track bar positions
         color = cv2.getTrackbarPos("Color Cloud", self._configurations)
         depth = cv2.getTrackbarPos("Depth Cloud", self._configurations)
@@ -314,7 +319,9 @@ class Cloud:
             # for color point cloud
             if self._color_point_cloud:
                 # update the color points position
+                color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
                 self._world_points = mapper.color_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint, as_array=False)
+                self._world_points = ctypes.cast(self._world_points, ctypes.POINTER(ctypes.c_float))
                 self._world_points = np.ctypeslib.as_array(self._world_points, shape=(self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 3))
                 # store points
                 self._dynamic_point_cloud = np.ndarray(shape=(len(self._world_points), 3), dtype=np.float32)
@@ -331,6 +338,7 @@ class Cloud:
 
             # for depth point cloud
             if self._depth_point_cloud:
+                """
                 # update the depth points position
                 self._world_points = mapper.depth_2_world_table(self._kinect, _DepthSpacePoint, as_array=False)
                 self._world_points = ctypes.cast(self._world_points, ctypes.POINTER(ctypes.c_float))
@@ -342,6 +350,21 @@ class Cloud:
                 self._dynamic_point_cloud[:, 2] = self._world_points[:, 1]*1000
                 # remove zero depths
                 self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
+                # simultaneously point cloud
+                if self._simultaneously_point_cloud:
+                    self._depth_point_cloud_points = self._dynamic_point_cloud
+                """
+                self._world_points = mapper.depth_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint)
+                self._world_points = ctypes.cast(self._world_points, ctypes.POINTER(ctypes.c_float))
+                self._world_points = np.ctypeslib.as_array(self._world_points, shape=(self._kinect.depth_frame_desc.Height * self._kinect.depth_frame_desc.Width, 3))
+                # store points
+                self._dynamic_point_cloud = np.ndarray(shape=(len(self._world_points), 3), dtype=np.float32)
+                self._dynamic_point_cloud[:, 0] = self._world_points[:, 0] * 1000
+                self._dynamic_point_cloud[:, 1] = self._world_points[:, 2] * 1000
+                self._dynamic_point_cloud[:, 2] = self._world_points[:, 1] * 1000
+                # remove -inf (too slow)
+                # self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
+
                 # simultaneously point cloud
                 if self._simultaneously_point_cloud:
                     self._depth_point_cloud_points = self._dynamic_point_cloud
@@ -388,6 +411,11 @@ class Cloud:
                         if not body.is_tracked:
                             continue
                         self._bodies_indexes.append(i)
+                        floor_vector = self._body_frame.floor_clip_plane
+                        # Kinect's Distance from Floor
+                        self._kinect_distance_from_plane = floor_vector.w * 1000  # mm
+                        self._kinect_tilt = np.arctan(floor_vector.z / floor_vector.y) * (180.0 / np.pi)  # degrees
+
                     # calculate the skeleton joints for each tracked skeleton
                     self._dynamic_point_cloud = np.ndarray(shape=(len(self._bodies_indexes) * 25, 3), dtype=np.float32)
                     for i, index in enumerate(self._bodies_indexes):
@@ -395,6 +423,7 @@ class Cloud:
                         self._dynamic_point_cloud[i*25:(i+1)*25, 0] = [joint.Position.x * 1000 for joint in self._joints[:25]]
                         self._dynamic_point_cloud[i*25:(i+1)*25, 1] = [joint.Position.z * 1000 for joint in self._joints[:25]]
                         self._dynamic_point_cloud[i*25:(i+1)*25, 2] = [joint.Position.y * 1000 for joint in self._joints[:25]]
+
                 except:
                     # if no body is tracked then plot zeros
                     self._dynamic_point_cloud = np.ndarray(shape=(2, 3), dtype=np.float32)
@@ -418,14 +447,27 @@ class Cloud:
                 self._dynamic_point_cloud = self._simultaneously_point_cloud_points[1:,:]
 
             # scatter the calculated points
-            self._scatter.setData(pos=self._dynamic_point_cloud)
+            # self._scatter.setData(pos=self._dynamic_point_cloud)
 
         # update the color and size of the points based on the track bars
         self._color = np.zeros((len(self._dynamic_point_cloud), 4), dtype=np.float32)
         self._color[:, 0] = self._red / 255
         self._color[:, 1] = self._green / 255
         self._color[:, 2] = self._blue / 255
-        self._color[:, 3] = 1.0  # opacity
+        self._color[:, 3] = self._opacity / 255  # opacity
+
+        # update color from rgb camera when using the color img sensor
+        if self._color_point_cloud:
+            # self._color = self._color[:, :3:]  # remove the fourth opacity channel
+            # self._color = self._color[..., ::-1]  # transform from BGR to RGB
+            # color_img = color_img[..., ::-1]
+            try:
+                color_img = np.divide(color_img, 255)  # standardize from 0 to 1
+                self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 0] = color_img[:, 0]
+                self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 1] = color_img[:, 1]
+                self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 2] = color_img[:, 2]
+            except:
+                pass
 
         # update the skeleton color and size for simultaneously point cloud
         # for better visualization
@@ -447,7 +489,21 @@ class Cloud:
                     self._color[-25*(i+1):-25*i, 2] = self._skeleton_colors[i, 2]
 
         # update the pyqtgraph cloud
-        self._scatter.setData(color=self._color, size=self._size)
+        self._scatter.setData(pos=self._dynamic_point_cloud, color=self._color, size=self._size)
+
+    def camera_orientation(self):
+        def rotate(axis1, axis2, degrees):
+            hypotenuse = np.sqrt(self._dynamic_point_cloud[:, axis1]**2 + self._dynamic_point_cloud[:, axis2]**2)
+            _tan = np.arctan2(self._dynamic_point_cloud[:, axis2], self._dynamic_point_cloud[:, axis1])
+            curl_angle = np.degrees(_tan) % 360
+            new_angle = np.radians((curl_angle + degrees) % 360)
+            self._dynamic_point_cloud[:, axis1] = hypotenuse * np.cos(new_angle)
+            self._dynamic_point_cloud[:, axis2] = hypotenuse * np.sin(new_angle)
+
+        rotate(0, 2, self._kinect_distance_from_plane)
+        rotate(0, 2, self._kinect_tilt)
+
+        self._dynamic_point_cloud += np.float_([0, 0, 0])
 
     def init(self):
         """
@@ -527,8 +583,8 @@ if __name__ == "__main__":
     For dynamically creating the PointCloud and viewing the PointCloud.
     """
     # rgb camera
-    # pcl = Cloud(dynamic=True, color=True)
-    # pcl.visualize()
+    pcl = Cloud(dynamic=True, color=True)
+    pcl.visualize()
     # depth camera
     # pcl = Cloud(dynamic=True, depth=True)
     # pcl.visualize()
@@ -547,5 +603,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
     # pcl.visualize()
-    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True)
-    pcl.visualize()
+    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True)
+    # pcl.visualize()
