@@ -66,8 +66,6 @@ class Cloud:
         self._body_point_cloud_points = None  # store body cloud points for simultaneously showing
         self._skeleton_point_cloud_points = None  # store skeleton cloud points for simultaneously showing
         self._simultaneously_point_cloud_points = None  # stack all the points
-        self._kinect_distance_from_plane = None  # store kinect's distance from plane
-        self._kinect_tilt = None  # store kinect's tilt angle
         self._skeleton_colors = np.asarray([[1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0], [0, 1, 1], [1, 0, 1]], dtype=np.float32)  # skeleton color pallet
         self._app = QtGui.QApplication([])  # Initialize app
         self._w = gl.GLViewWidget()  # Initialize view widget
@@ -214,24 +212,26 @@ class Cloud:
                     if self._kinect.has_new_depth_frame() and self._color_frame is not None and self._dt > 6:
                         # use mapper to get world points
                         if self._depth_point_cloud:
-                            world_points = mapper.depth_2_world_table(self._kinect, _DepthSpacePoint, as_array=False)
+                            world_points = mapper.depth_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint)
                             world_points = ctypes.cast(world_points, ctypes.POINTER(ctypes.c_float))
-                            world_points = np.ctypeslib.as_array(world_points, shape=(self._kinect.depth_frame_desc.Height * self._kinect.depth_frame_desc.Width, 2))
+                            world_points = np.ctypeslib.as_array(world_points, shape=(self._kinect.depth_frame_desc.Height * self._kinect.depth_frame_desc.Width, 3))
+                            world_points *= 1000  # transform to mm
                             self._dynamic_point_cloud = np.ndarray(shape=(len(world_points), 3), dtype=np.float32)
                             # transform to mm
-                            self._dynamic_point_cloud[:, 0] = world_points[:, 0] * 1000
-                            self._dynamic_point_cloud[:, 1] = self._kinect.get_last_depth_frame()
-                            self._dynamic_point_cloud[:, 2] = world_points[:, 1] * 1000
+                            self._dynamic_point_cloud[:, 0] = world_points[:, 0]
+                            self._dynamic_point_cloud[:, 1] = world_points[:, 2]
+                            self._dynamic_point_cloud[:, 2] = world_points[:, 1]
                             # remove zero depths
                             self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
+                            self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
 
                         if self._color_point_cloud:
                             # use mapper to get world points from color sensor
-                            world_points = mapper.color_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint, as_array=False)
+                            world_points = mapper.color_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint)
+                            world_points = ctypes.cast(world_points, ctypes.POINTER(ctypes.c_float))
                             world_points = np.ctypeslib.as_array(world_points, shape=(self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 3))
                             world_points *= 1000  # transform to mm
                             # transform the point cloud to np (424*512, 3) array
-                            # store points
                             self._dynamic_point_cloud = np.ndarray(shape=(len(world_points), 3), dtype=np.float32)
                             self._dynamic_point_cloud[:, 0] = world_points[:, 0]
                             self._dynamic_point_cloud[:, 1] = world_points[:, 2]
@@ -338,22 +338,6 @@ class Cloud:
 
             # for depth point cloud
             if self._depth_point_cloud:
-                """
-                # update the depth points position
-                self._world_points = mapper.depth_2_world_table(self._kinect, _DepthSpacePoint, as_array=False)
-                self._world_points = ctypes.cast(self._world_points, ctypes.POINTER(ctypes.c_float))
-                self._world_points = np.ctypeslib.as_array(self._world_points, shape=(self._kinect.depth_frame_desc.Height * self._kinect.depth_frame_desc.Width, 2))
-                # store points
-                self._dynamic_point_cloud = np.ndarray(shape=(len(self._world_points), 3), dtype=np.float32)
-                self._dynamic_point_cloud[:, 0] = self._world_points[:, 0]*1000
-                self._dynamic_point_cloud[:, 1] = self._kinect.get_last_depth_frame()
-                self._dynamic_point_cloud[:, 2] = self._world_points[:, 1]*1000
-                # remove zero depths
-                self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
-                # simultaneously point cloud
-                if self._simultaneously_point_cloud:
-                    self._depth_point_cloud_points = self._dynamic_point_cloud
-                """
                 self._world_points = mapper.depth_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint)
                 self._world_points = ctypes.cast(self._world_points, ctypes.POINTER(ctypes.c_float))
                 self._world_points = np.ctypeslib.as_array(self._world_points, shape=(self._kinect.depth_frame_desc.Height * self._kinect.depth_frame_desc.Width, 3))
@@ -411,10 +395,6 @@ class Cloud:
                         if not body.is_tracked:
                             continue
                         self._bodies_indexes.append(i)
-                        floor_vector = self._body_frame.floor_clip_plane
-                        # Kinect's Distance from Floor
-                        self._kinect_distance_from_plane = floor_vector.w * 1000  # mm
-                        self._kinect_tilt = np.arctan(floor_vector.z / floor_vector.y) * (180.0 / np.pi)  # degrees
 
                     # calculate the skeleton joints for each tracked skeleton
                     self._dynamic_point_cloud = np.ndarray(shape=(len(self._bodies_indexes) * 25, 3), dtype=np.float32)
@@ -445,9 +425,6 @@ class Cloud:
                     self._simultaneously_point_cloud_points = np.vstack((self._simultaneously_point_cloud_points, self._skeleton_point_cloud_points))
                 # remove the first initialized array
                 self._dynamic_point_cloud = self._simultaneously_point_cloud_points[1:,:]
-
-            # scatter the calculated points
-            # self._scatter.setData(pos=self._dynamic_point_cloud)
 
         # update the color and size of the points based on the track bars
         self._color = np.zeros((len(self._dynamic_point_cloud), 4), dtype=np.float32)
@@ -490,20 +467,6 @@ class Cloud:
 
         # update the pyqtgraph cloud
         self._scatter.setData(pos=self._dynamic_point_cloud, color=self._color, size=self._size)
-
-    def camera_orientation(self):
-        def rotate(axis1, axis2, degrees):
-            hypotenuse = np.sqrt(self._dynamic_point_cloud[:, axis1]**2 + self._dynamic_point_cloud[:, axis2]**2)
-            _tan = np.arctan2(self._dynamic_point_cloud[:, axis2], self._dynamic_point_cloud[:, axis1])
-            curl_angle = np.degrees(_tan) % 360
-            new_angle = np.radians((curl_angle + degrees) % 360)
-            self._dynamic_point_cloud[:, axis1] = hypotenuse * np.cos(new_angle)
-            self._dynamic_point_cloud[:, axis2] = hypotenuse * np.sin(new_angle)
-
-        rotate(0, 2, self._kinect_distance_from_plane)
-        rotate(0, 2, self._kinect_tilt)
-
-        self._dynamic_point_cloud += np.float_([0, 0, 0])
 
     def init(self):
         """
@@ -566,7 +529,7 @@ if __name__ == "__main__":
     and save it to that file.txt.
     It can also view .pcd and .ply files.
     """
-    # pcl = Cloud(file='Models/PointCloud/test_cloud_2.txt')
+    # pcl = Cloud(file='Models/PointCloud/points.txt')
     # pcl.visualize()
     # pcd or ply files open with the Open3D library
     # pcl = Cloud(file='Models/PointCloud/model.pcd')
@@ -583,8 +546,8 @@ if __name__ == "__main__":
     For dynamically creating the PointCloud and viewing the PointCloud.
     """
     # rgb camera
-    pcl = Cloud(dynamic=True, color=True)
-    pcl.visualize()
+    # pcl = Cloud(dynamic=True, color=True)
+    # pcl.visualize()
     # depth camera
     # pcl = Cloud(dynamic=True, depth=True)
     # pcl.visualize()
@@ -603,5 +566,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
     # pcl.visualize()
-    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True)
-    # pcl.visualize()
+    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True)
+    pcl.visualize()
