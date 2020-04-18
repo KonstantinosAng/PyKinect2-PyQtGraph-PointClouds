@@ -161,7 +161,7 @@ class Cloud:
         # Create window for track bars
         cv2.namedWindow(self._configurations, WINDOW_FREERATIO)
         cv2.createTrackbar("Size", self._configurations, 5, 350, self.nothing)
-        cv2.createTrackbar("SkeletonSize", self._configurations, 35, 350, self.nothing)
+        cv2.createTrackbar("SkeletonSize", self._configurations, 0, 350, self.nothing)
         cv2.createTrackbar("Red", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Green", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Blue", self._configurations, 255, 255, self.nothing)
@@ -183,9 +183,11 @@ class Cloud:
             cv2.setTrackbarPos("Skeleton Cloud", self._configurations, 1)
         if self._simultaneously_point_cloud:
             cv2.setTrackbarPos("Simultaneously", self._configurations, 1)
+            cv2.setTrackbarPos("SkeletonSize", self._configurations, 20)
         if self._color_overlay:
             cv2.setTrackbarPos("ColorOverlay", self._configurations, 1)
             cv2.setTrackbarPos("Size", self._configurations, 30)
+
 
     def nothing(self, x):
         """
@@ -538,7 +540,10 @@ class Cloud:
 
         # update the pyqtgraph cloud
         self._scatter.setData(pos=self._dynamic_point_cloud, color=self._color, size=self._size)
-        self._scatter.setGLOptions('opaque')  # don't display vertexes that are behind other vertexes
+        if self._color_overlay:
+            self._scatter.setGLOptions('opaque')  # enables depth and disables blending
+        else:
+            self._scatter.setGLOptions('additive')  # disables depth enables blending
 
     def init(self):
         """
