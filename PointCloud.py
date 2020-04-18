@@ -490,11 +490,31 @@ class Cloud:
             # update color for the body index frame
             if self._body_index_cloud:
                 try:
+                    # if the depth point cloud is enabled remove these calculations
+                    if not self._depth_point_cloud:
+                        # map color to depth frame
+                        Xs, Ys = mapper.color_2_depth_space(self._kinect, _ColorSpacePoint, self._kinect._depth_frame_data, show=False)
+                        color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+                        # make align rgb/d image
+                        align_color_img = np.zeros((self._kinect.depth_frame_desc.Height, self._kinect.depth_frame_desc.Width, 4), dtype=np.uint8)
+                        align_color_img[:, :] = color_img[Ys, Xs, :]
+                        align_color_img = align_color_img.reshape((self._kinect.depth_frame_desc.Height * self._kinect.depth_frame_desc.Width, 4)).astype(np.uint8)
+                        align_color_img = align_color_img[:, :3:]  # remove the fourth opacity channel
+                        align_color_img = align_color_img[..., ::-1]  # transform from bgr to rgb
+                        align_color_img = np.divide(align_color_img, 255)  # standardize from 0 to 1
+                    # remove zero depth points to match the array sizes as in the depth body index
+                    self._body_index_points = self._body_index_points[depth[self._body_index_points[:, 0] * 512 + self._body_index_points[:, 1]] != 0]
+                    # update color based on the rgb frame
                     if self._simultaneously_point_cloud:
-                        pass
+                        self._color[body_index_start:body_index_end, 0] = align_color_img[self._body_index_points[:, 0] * 512 + self._body_index_points[:, 1]][:, 0]
+                        self._color[body_index_start:body_index_end, 1] = align_color_img[self._body_index_points[:, 0] * 512 + self._body_index_points[:, 1]][:, 1]
+                        self._color[body_index_start:body_index_end, 2] = align_color_img[self._body_index_points[:, 0] * 512 + self._body_index_points[:, 1]][:, 2]
                     else:
-                        pass
+                        self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 0] = align_color_img[self._body_index_points[:, 0] * 512 + self._body_index_points[:, 1]][:, 0]
+                        self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 1] = align_color_img[self._body_index_points[:, 0] * 512 + self._body_index_points[:, 1]][:, 1]
+                        self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 2] = align_color_img[self._body_index_points[:, 0] * 512 + self._body_index_points[:, 1]][:, 2]
                 except:
+                    # handle exceptions when no body is tracked
                     pass
 
         # update the skeleton color and size for simultaneously point cloud
