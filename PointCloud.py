@@ -23,7 +23,7 @@ import open3d as o3d
 
 class Cloud:
 
-    def __init__(self, file='Models/PointCloud/test_cloud_1.txt', dynamic=False, color=False, depth=False, body=False, skeleton=False, simultaneously=False):
+    def __init__(self, file='Models/PointCloud/test_cloud_1.txt', dynamic=False, color=False, depth=False, body=False, skeleton=False, simultaneously=False, color_overlay=False):
         """
         Initializes the point cloud
         file: The dir to the point cloud (either .txt, .ply or .pcd file)
@@ -56,6 +56,7 @@ class Cloud:
         self._dynamic = dynamic  # Flag for initializing a dynamic pointcloud
         self._cloud_file = file  # Store the file name
         self._body_index_cloud = body  # save body flag
+        self._color_overlay = color_overlay  # flag to display the rgb image color up to the pointcloud
         self._dir_path = os.path.dirname(os.path.realpath(__file__))  # Store the absolute path of the file
         self._body_frame = None  # store body frame data
         self._joints = None  # save skeleton joints
@@ -165,6 +166,7 @@ class Cloud:
         cv2.createTrackbar("Green", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Blue", self._configurations, 255, 255, self.nothing)
         cv2.createTrackbar("Opacity", self._configurations, 255, 255, self.nothing)
+        cv2.createTrackbar("ColorOverlay", self._configurations, 0, 1, self.nothing)
         cv2.createTrackbar("Color Cloud", self._configurations, 0, 1, self.nothing)
         cv2.createTrackbar("Depth Cloud", self._configurations, 0, 1, self.nothing)
         cv2.createTrackbar("Body Cloud", self._configurations, 0, 1, self.nothing)
@@ -181,6 +183,8 @@ class Cloud:
             cv2.setTrackbarPos("Skeleton Cloud", self._configurations, 1)
         if self._simultaneously_point_cloud:
             cv2.setTrackbarPos("Simultaneously", self._configurations, 1)
+        if self._color_overlay:
+            cv2.setTrackbarPos("ColorOverlay", self._configurations, 1)
 
     def nothing(self, x):
         """
@@ -301,6 +305,7 @@ class Cloud:
         self._green = cv2.getTrackbarPos("Green", self._configurations)
         self._blue = cv2.getTrackbarPos("Blue", self._configurations)
         self._opacity = cv2.getTrackbarPos("Opacity", self._configurations)
+        self._color_overlay = cv2.getTrackbarPos("ColorOverlay", self._configurations)
         # update the input track bar positions
         color = cv2.getTrackbarPos("Color Cloud", self._configurations)
         depth = cv2.getTrackbarPos("Depth Cloud", self._configurations)
@@ -421,7 +426,9 @@ class Cloud:
                     self._simultaneously_point_cloud_points = np.vstack((self._simultaneously_point_cloud_points, self._depth_point_cloud_points))
                     depth_index_end = len(self._simultaneously_point_cloud_points) - 1
                 if self._body_index_cloud:
+                    body_index_start = len(self._simultaneously_point_cloud_points) - 1
                     self._simultaneously_point_cloud_points = np.vstack((self._simultaneously_point_cloud_points, self._body_point_cloud_points))
+                    body_index_end = len(self._simultaneously_point_cloud_points) - 1
                 if self._skeleton_point_cloud:
                     self._simultaneously_point_cloud_points = np.vstack((self._simultaneously_point_cloud_points, self._skeleton_point_cloud_points))
                 # remove the first initialized array
@@ -434,51 +441,60 @@ class Cloud:
         self._color[:, 2] = self._blue / 255
         self._color[:, 3] = self._opacity / 255  # opacity
 
-        # update color from rgb camera when using the color img sensor
-        if self._color_point_cloud:
-            try:
-                color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
-                color_img = np.divide(color_img, 255)  # standardize from 0 to 1
-                color_img = color_img.reshape((self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 4))
-                color_img = color_img[:, :3:]
-                color_img = color_img[..., ::-1]
-                self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 0] = color_img[:, 0]
-                self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 1] = color_img[:, 1]
-                self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 2] = color_img[:, 2]
-            except:
-                pass
-
-        # update color for the depth camera point cloud by mapping the rgb frame to the depth frame
-        if self._depth_point_cloud:
-            try:
-                Xs, Ys = mapper.color_2_depth_space(self._kinect, _ColorSpacePoint, self._kinect._depth_frame_data, show=False)
-                color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
-                align_color_img = np.zeros((self._kinect.depth_frame_desc.Height, self._kinect.depth_frame_desc.Width, 4), dtype=np.uint8)
-                align_color_img[:, :] = color_img[Ys, Xs, :]
-                align_color_img = align_color_img.reshape((self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 4)).astype(np.uint8)
-                align_color_img = align_color_img[:, :3:]
-                align_color_img = align_color_img[..., ::-1]
-                align_color_img = np.divide(align_color_img, 255)
-                if self._simultaneously_point_cloud:
-                    self._color[depth_index_start:depth_index_end, 0] = align_color_img[:, 0]
-                    self._color[depth_index_start:depth_index_end, 1] = align_color_img[:, 1]
-                    self._color[depth_index_start:depth_index_end, 2] = align_color_img[:, 2]
-                else:
-                    self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 0] = align_color_img[:, 0]
-                    self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 1] = align_color_img[:, 1]
-                    self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 2] = align_color_img[:, 2]
-            except:
-                pass
-
-        # update color for the body index frame
-        if self._body_index_cloud:
-            try:
-                if self._simultaneously_point_cloud:
+        # update color from rgb camera for each case
+        if self._color_overlay:
+            # update color from rgb camera when using the color img sensor
+            if self._color_point_cloud:
+                try:
+                    # get color image
+                    color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+                    color_img = np.divide(color_img, 255)  # standardize from 0 to 1
+                    color_img = color_img.reshape((self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 4))
+                    color_img = color_img[:, :3:]  # remove the fourth opacity channel
+                    color_img = color_img[..., ::-1]  # transform from bgr to rgb
+                    # update color with rgb color
+                    self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 0] = color_img[:, 0]
+                    self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 1] = color_img[:, 1]
+                    self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 2] = color_img[:, 2]
+                except:
+                    # handle exception during simultaneously where body is not yet tracked
                     pass
-                else:
+
+            # update color for the depth camera point cloud by mapping the rgb frame to the depth frame
+            if self._depth_point_cloud:
+                try:
+                    # map color to depth frame
+                    Xs, Ys = mapper.color_2_depth_space(self._kinect, _ColorSpacePoint, self._kinect._depth_frame_data, show=False)
+                    color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+                    # make align rgb/d image
+                    align_color_img = np.zeros((self._kinect.depth_frame_desc.Height, self._kinect.depth_frame_desc.Width, 4), dtype=np.uint8)
+                    align_color_img[:, :] = color_img[Ys, Xs, :]
+                    align_color_img = align_color_img.reshape((self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 4)).astype(np.uint8)
+                    align_color_img = align_color_img[:, :3:]  # remove the fourth opacity channel
+                    align_color_img = align_color_img[..., ::-1]  # transform from bgr to rgb
+                    align_color_img = np.divide(align_color_img, 255)  # standardize from 0 to 1
+                    # update color with rgb color
+                    if self._simultaneously_point_cloud:
+                        self._color[depth_index_start:depth_index_end, 0] = align_color_img[:, 0]
+                        self._color[depth_index_start:depth_index_end, 1] = align_color_img[:, 1]
+                        self._color[depth_index_start:depth_index_end, 2] = align_color_img[:, 2]
+                    else:
+                        self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 0] = align_color_img[:, 0]
+                        self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 1] = align_color_img[:, 1]
+                        self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 2] = align_color_img[:, 2]
+                except:
+                    # handle exception during simultaneously where body is not yet tracked
                     pass
-            except:
-                pass
+
+            # update color for the body index frame
+            if self._body_index_cloud:
+                try:
+                    if self._simultaneously_point_cloud:
+                        pass
+                    else:
+                        pass
+                except:
+                    pass
 
         # update the skeleton color and size for simultaneously point cloud
         # for better visualization
@@ -593,13 +609,13 @@ if __name__ == "__main__":
     # pcl = Cloud(dynamic=True, skeleton=True)
     # pcl.visualize()
     """
-    # You can also visualize the clouds simultaneously in any order.
+    # You can also visualize the clouds simultaneously in any order, and apply the rgb frame color on top of them.s
     """
-    # pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
+    # pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False, color_overlay=True)
     # pcl.visualize()
-    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=True, body=True, skeleton=True)
+    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=True, body=True, skeleton=True, color_overlay=False)
     # pcl.visualize()
-    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
+    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False, color_overlay=False)
     # pcl.visualize()
-    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True)
+    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True, color_overlay=True)
     pcl.visualize()
