@@ -185,6 +185,7 @@ class Cloud:
             cv2.setTrackbarPos("Simultaneously", self._configurations, 1)
         if self._color_overlay:
             cv2.setTrackbarPos("ColorOverlay", self._configurations, 1)
+            cv2.setTrackbarPos("Size", self._configurations, 30)
 
     def nothing(self, x):
         """
@@ -501,7 +502,7 @@ class Cloud:
         if self._skeleton_point_cloud and self._simultaneously_point_cloud:
             # make skeleton point bigger
             self._size = np.zeros(len(self._dynamic_point_cloud), dtype=np.float32)
-            self._size[:] = self._size / 10
+            self._size[:] = cv2.getTrackbarPos("Size", self._configurations) / 10
             if len(self._bodies_indexes) > 0:
                 self._size[-25*len(self._bodies_indexes):] = cv2.getTrackbarPos("SkeletonSize", self._configurations)
             # update the skeleton colors for each different skeleton tracked
@@ -517,7 +518,7 @@ class Cloud:
 
         # update the pyqtgraph cloud
         self._scatter.setData(pos=self._dynamic_point_cloud, color=self._color, size=self._size)
-        self._scatter.setGLOptions('opaque')
+        self._scatter.setGLOptions('opaque')  # don't display vertexes that are behind other vertexes
 
     def init(self):
         """
