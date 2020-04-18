@@ -1,5 +1,5 @@
 # PyKinect2-PyQtGraph-PointClouds
-Creating real-time dynamic Point Clouds using PyQtGraph and PyKinect2.
+Creating real-time dynamic Point Clouds using PyQtGraph, Kinect 2 and the python library PyKinect2.
 
 ## Description
 The PointCloud.py file contains the main class to produce dynamic Point Clouds using the [PyKinect2](https://github.com/Kinect/PyKinect2) and the [PyQtGraph](https://github.com/pyqtgraph/pyqtgraph) libraries.
@@ -109,5 +109,5 @@ In addition, there is a window with trackbars to change the input flags, the col
 <img src="img/image_5.png"/>
 <img src="img/image_6.png"/>
 <img src="img/image_7.png"/>
-<img src="img/image_8.png"/>
+<img src="img/image_9.png"/>
 </p>
