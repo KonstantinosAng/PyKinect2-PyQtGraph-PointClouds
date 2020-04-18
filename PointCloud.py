@@ -319,7 +319,6 @@ class Cloud:
             # for color point cloud
             if self._color_point_cloud:
                 # update the color points position
-                color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
                 self._world_points = mapper.color_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint, as_array=False)
                 self._world_points = ctypes.cast(self._world_points, ctypes.POINTER(ctypes.c_float))
                 self._world_points = np.ctypeslib.as_array(self._world_points, shape=(self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 3))
@@ -418,7 +417,9 @@ class Cloud:
                 if self._color_point_cloud:
                     self._simultaneously_point_cloud_points = np.vstack((self._simultaneously_point_cloud_points, self._color_point_cloud_points))
                 if self._depth_point_cloud:
+                    depth_index_start = len(self._simultaneously_point_cloud_points) - 1
                     self._simultaneously_point_cloud_points = np.vstack((self._simultaneously_point_cloud_points, self._depth_point_cloud_points))
+                    depth_index_end = len(self._simultaneously_point_cloud_points) - 1
                 if self._body_index_cloud:
                     self._simultaneously_point_cloud_points = np.vstack((self._simultaneously_point_cloud_points, self._body_point_cloud_points))
                 if self._skeleton_point_cloud:
@@ -435,16 +436,38 @@ class Cloud:
 
         # update color from rgb camera when using the color img sensor
         if self._color_point_cloud:
-            # self._color = self._color[:, :3:]  # remove the fourth opacity channel
-            # self._color = self._color[..., ::-1]  # transform from BGR to RGB
-            # color_img = color_img[..., ::-1]
             try:
+                color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
                 color_img = np.divide(color_img, 255)  # standardize from 0 to 1
+                color_img = color_img.reshape((self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 4))
+                color_img = color_img[:, :3:]
+                color_img = color_img[..., ::-1]
                 self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 0] = color_img[:, 0]
                 self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 1] = color_img[:, 1]
                 self._color[:self._kinect.color_frame_desc.Height*self._kinect.color_frame_desc.Width, 2] = color_img[:, 2]
             except:
                 pass
+
+        if self._depth_point_cloud:
+            try:
+                Xs, Ys = mapper.color_2_depth_space(self._kinect, _ColorSpacePoint, self._kinect._depth_frame_data, show=False)
+                color_img = self._kinect.get_last_color_frame().reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+                align_color_img = np.zeros((self._kinect.depth_frame_desc.Height, self._kinect.depth_frame_desc.Width, 4), dtype=np.uint8)
+                align_color_img[:, :] = color_img[Ys, Xs, :]
+                align_color_img = align_color_img.reshape((self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 4)).astype(np.uint8)
+                align_color_img = align_color_img[:, :3:]
+                align_color_img = align_color_img[..., ::-1]
+                align_color_img = np.divide(align_color_img, 255)
+                if self._simultaneously_point_cloud:
+                    self._color[depth_index_start:depth_index_end, 0] = align_color_img[:, 0]
+                    self._color[depth_index_start:depth_index_end, 1] = align_color_img[:, 1]
+                    self._color[depth_index_start:depth_index_end, 2] = align_color_img[:, 2]
+                else:
+                    self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 0] = align_color_img[:, 0]
+                    self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 1] = align_color_img[:, 1]
+                    self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 2] = align_color_img[:, 2]
+            except Exception as e:
+                print(e)
 
         # update the skeleton color and size for simultaneously point cloud
         # for better visualization
