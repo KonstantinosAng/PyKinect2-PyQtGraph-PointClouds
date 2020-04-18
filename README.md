@@ -86,15 +86,15 @@ pcl.visualize()
 You can also visualize the clouds simultaneously in any order.
 ```
 # example 1 with color and depth point clouds
-pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False)
+pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False, color_overlay=False)
 pcl.visualize()
 
 # example 2 with all the point clouds enabled (scroll out to see the point cloud)
-pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=True, body=True, skeleton=True)
+pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=True, body=True, skeleton=True, color_overlay=True)
 pcl.visualize()
 
 # example 3 with depth and body index point cloud
-pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False)
+pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False, color_overlay=True)
 pcl.visualize()
 ```
 
@@ -106,7 +106,6 @@ In addition, there is a window with trackbars to change the input flags, the col
 <img src="img/image_2.png"/>
 <img src="img/image_3.png"/>
 <img src="img/image_4.png"/>
-<img src="img/image_5.png"/>
 <img src="img/image_6.png"/>
 <img src="img/image_7.png"/>
 <img src="img/image_9.png"/>
