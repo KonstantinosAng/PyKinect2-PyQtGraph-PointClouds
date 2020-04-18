@@ -448,6 +448,7 @@ class Cloud:
             except:
                 pass
 
+        # update color for the depth camera point cloud by mapping the rgb frame to the depth frame
         if self._depth_point_cloud:
             try:
                 Xs, Ys = mapper.color_2_depth_space(self._kinect, _ColorSpacePoint, self._kinect._depth_frame_data, show=False)
@@ -466,8 +467,18 @@ class Cloud:
                     self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 0] = align_color_img[:, 0]
                     self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 1] = align_color_img[:, 1]
                     self._color[:self._kinect.depth_frame_desc.Height*self._kinect.depth_frame_desc.Width, 2] = align_color_img[:, 2]
-            except Exception as e:
-                print(e)
+            except:
+                pass
+
+        # update color for the body index frame
+        if self._body_index_cloud:
+            try:
+                if self._simultaneously_point_cloud:
+                    pass
+                else:
+                    pass
+            except:
+                pass
 
         # update the skeleton color and size for simultaneously point cloud
         # for better visualization
