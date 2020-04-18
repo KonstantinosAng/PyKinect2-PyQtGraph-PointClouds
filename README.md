@@ -109,4 +109,5 @@ In addition, there is a window with trackbars to change the input flags, the col
 <img src="img/image_5.png"/>
 <img src="img/image_6.png"/>
 <img src="img/image_7.png"/>
+<img src="img/image_8.png"/>
 </p>
