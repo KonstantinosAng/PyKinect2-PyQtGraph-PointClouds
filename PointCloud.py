@@ -501,6 +501,7 @@ class Cloud:
 
         # update the pyqtgraph cloud
         self._scatter.setData(pos=self._dynamic_point_cloud, color=self._color, size=self._size)
+        self._scatter.setGLOptions('opaque')
 
     def init(self):
         """
