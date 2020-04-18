@@ -102,11 +102,11 @@ In addition, there is a window with trackbars to change the input flags, the col
 
 ## Examples
 <p align="center">
+<img src="img/image_9.png"/>
 <img src="img/image_1.png"/>
 <img src="img/image_2.png"/>
 <img src="img/image_3.png"/>
 <img src="img/image_4.png"/>
 <img src="img/image_6.png"/>
 <img src="img/image_7.png"/>
-<img src="img/image_9.png"/>
 </p>
