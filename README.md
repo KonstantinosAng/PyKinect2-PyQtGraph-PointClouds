@@ -52,6 +52,7 @@ pcl.visualize()
 #viewing .ply or .pcd files
 # .pcd or .ply files open with the Open3D library
 pcl = Cloud(file='models/model.pcd')
+
 pcl = Cloud(file='models/Car.ply')
 ```
 If the files doesn't exist then you have to specify from which sensor camera you want the pointcloud to be created and saved with that file name.
@@ -62,7 +63,7 @@ pcl = Cloud(file='models/cloud_test_1.txt', depth=True)
 pcl.visualize()
 
 # Creating a pointcloud with the color camera
-Bpcl = Cloud(file='models/cloud_test_2.txt', color=True)
+pcl = Cloud(file='models/cloud_test_2.txt', color=True)
 pcl.visualize()
 ```
 For dynamically creating and viewing the PointCloud.

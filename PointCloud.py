@@ -1,6 +1,6 @@
 """
 Author: Konstantinos Angelopoulos
-Date: 16/04/2020
+Date: 12/04/2020
 All rights reserved.
 Feel free to use and modify and if you like it give it a star.
 """
@@ -23,7 +23,7 @@ import open3d as o3d
 
 class Cloud:
 
-    def __init__(self, file='Models/PointCloud/test_cloud_1.txt', dynamic=False, color=False, depth=False, body=False, skeleton=False, simultaneously=False, color_overlay=False):
+    def __init__(self, file="", dynamic=False, color=False, depth=False, body=False, skeleton=False, simultaneously=False, color_overlay=False):
         """
         Initializes the point cloud
         file: The dir to the point cloud (either .txt, .ply or .pcd file)
@@ -106,12 +106,30 @@ class Cloud:
                 print('Example 3 :\n pcl = Cloud(dynamic=True, body=True) \n pcl.visualize()')
                 print('Example 4 :\n pcl = Cloud(dynamic=True, skeleton=True) \n pcl.visualize()')
                 sys.exit()
+            else:
+                if self._dynamic:
+                    self.init()
+                else:
+                    if self._cloud_file != "":
+                        # check if file is not a txt and is a pcd file
+                        if self._cloud_file[-4:] == '.pcd' or self._cloud_file[-4:] == '.ply':
+                            self.visualize_file()
+                        elif self._cloud_file[-4:] == '.txt':
+                            self.init()  # Initialize the GL GUI
+                        else:
+                            if '.' in self._cloud_file:
+                                extension = '.' + self._cloud_file.split('.')[-1]
+                                print('[CloudPoint] Not supported file extension ({})'.format(extension))
+                                print('[CloudPoint] Only .txt, .pcd or .ply files are supported')
+                            else:
+                                print('[CloudPoint] Input has no valid file extension')
+                            sys.exit()
         else:
             if self._dynamic:
                 if  any([self._color_point_cloud and self._depth_point_cloud, self._color_point_cloud and self._body_index_cloud,
                          self._color_point_cloud and self._skeleton_point_cloud, self._depth_point_cloud and self._body_index_cloud,
                          self._depth_point_cloud and self._skeleton_point_cloud, self._body_index_cloud and self._skeleton_point_cloud]):
-                    pass
+                    self.init()  # Initialize the GL GUI
                 else:
                     # check for multiple flag inputs
                     print('[CloudPoint] Not Enough arguments, choose at least two methods of point clouds')
@@ -143,19 +161,20 @@ class Cloud:
                 print('Example 11 :\n pcl = Cloud(dynamic=True, depth=True, skeleton=True, body=True, simultaneously=True) \n pcl.visualize()')
                 sys.exit()
 
-        # check if file is not a txt and is a pcd file
-        if self._cloud_file[-4:] == '.pcd' or self._cloud_file[-4:] == '.ply':
-            self.visualize_file()
-        elif self._cloud_file[-4:] == '.txt':
-            self.init()  # Initialize the GL GUI
-        else:
-            if '.' in self._cloud_file:
-                extension = '.' + self._cloud_file.split('.')[-1]
-                print('[CloudPoint] Not supported file extension ({})'.format(extension))
-                print('[CloudPoint] Only .txt, .pcd or .ply files are supported')
+        if self._cloud_file != "":
+            # check if file is not a txt and is a pcd file
+            if self._cloud_file[-4:] == '.pcd' or self._cloud_file[-4:] == '.ply':
+                self.visualize_file()
+            elif self._cloud_file[-4:] == '.txt':
+                self.init()  # Initialize the GL GUI
             else:
-                print('[CloudPoint] Input has no valid file extension')
-            sys.exit()
+                if '.' in self._cloud_file:
+                    extension = '.' + self._cloud_file.split('.')[-1]
+                    print('[CloudPoint] Not supported file extension ({})'.format(extension))
+                    print('[CloudPoint] Only .txt, .pcd or .ply files are supported')
+                else:
+                    print('[CloudPoint] Input has no valid file extension')
+                sys.exit()
 
     def create_track_bars(self):
         # Create window for track bars
@@ -188,7 +207,6 @@ class Cloud:
             cv2.setTrackbarPos("ColorOverlay", self._configurations, 1)
             cv2.setTrackbarPos("Size", self._configurations, 30)
 
-
     def nothing(self, x):
         """
         For handling the callback from the cv2 track bar
@@ -217,6 +235,7 @@ class Cloud:
                         self._color_frame = self._kinect.get_last_color_frame()
                     # wait for kinect to grab at least one depth frame
                     if self._kinect.has_new_depth_frame() and self._color_frame is not None and self._dt > 6:
+
                         # use mapper to get world points
                         if self._depth_point_cloud:
                             world_points = mapper.depth_2_world(self._kinect, self._kinect._depth_frame_data, _CameraSpacePoint)
@@ -228,9 +247,27 @@ class Cloud:
                             self._dynamic_point_cloud[:, 0] = world_points[:, 0]
                             self._dynamic_point_cloud[:, 1] = world_points[:, 2]
                             self._dynamic_point_cloud[:, 2] = world_points[:, 1]
-                            # remove zero depths
-                            self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
-                            self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
+
+                            if self._cloud_file[-4:] == '.txt':
+                                # remove zero depths
+                                self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
+                                self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
+
+                            if self._cloud_file[-4:] == '.ply':
+                                # update color for .ply file only
+                                self._color = np.zeros((len(self._dynamic_point_cloud), 3), dtype=np.float32)
+                                # map color to depth frame
+                                Xs, Ys = mapper.color_2_depth_space(self._kinect, _ColorSpacePoint, self._kinect._depth_frame_data, show=False)
+                                color_img = self._color_frame.reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+                                # make align rgb/d image
+                                align_color_img = np.zeros((self._kinect.depth_frame_desc.Height, self._kinect.depth_frame_desc.Width, 4), dtype=np.uint8)
+                                align_color_img[:, :] = color_img[Ys, Xs, :]
+                                align_color_img = align_color_img.reshape((self._kinect.depth_frame_desc.Height * self._kinect.depth_frame_desc.Width, 4)).astype(np.uint8)
+                                align_color_img = align_color_img[:, :3:]  # remove the fourth opacity channel
+                                align_color_img = align_color_img[..., ::-1]  # transform from bgr to rgb
+                                self._color[:, 0] = align_color_img[:, 0]
+                                self._color[:, 1] = align_color_img[:, 1]
+                                self._color[:, 2] = align_color_img[:, 2]
 
                         if self._color_point_cloud:
                             # use mapper to get world points from color sensor
@@ -243,14 +280,30 @@ class Cloud:
                             self._dynamic_point_cloud[:, 0] = world_points[:, 0]
                             self._dynamic_point_cloud[:, 1] = world_points[:, 2]
                             self._dynamic_point_cloud[:, 2] = world_points[:, 1]
-                            # remove zeros from array
-                            self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
-                            self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
 
-                        # write points
-                        row =''.join(','.join(str(point).strip('[]') for point in xyz) + '\n' for xyz in self._dynamic_point_cloud)
-                        with open(os.path.join(self._dir_path, self._cloud_file), 'a') as txt_file:
-                            txt_file.write(row)
+                            if self._cloud_file[-4:] == '.txt':
+                                # remove zeros from array
+                                self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
+                                self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
+
+                            if self._cloud_file[-4:] == '.ply':
+                                # update color for .ply file only
+                                self._color = np.zeros((len(self._dynamic_point_cloud), 3), dtype=np.float32)
+                                # get color image
+                                color_img = self._color_frame.reshape((self._kinect.color_frame_desc.Height, self._kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+                                color_img = color_img.reshape((self._kinect.color_frame_desc.Height * self._kinect.color_frame_desc.Width, 4))
+                                color_img = color_img[:, :3:]  # remove the fourth opacity channel
+                                color_img = color_img[..., ::-1]  # transform from bgr to rgb
+                                # update color with rgb color
+                                self._color[:, 0] = color_img[:, 0]
+                                self._color[:, 1] = color_img[:, 1]
+                                self._color[:, 2] = color_img[:, 2]
+
+                        # write points for txt file
+                        if self._cloud_file[-4:] == '.txt':
+                            row =''.join(','.join(str(point).strip('[]') for point in xyz) + '\n' for xyz in self._dynamic_point_cloud)
+                            with open(os.path.join(self._dir_path, self._cloud_file), 'a') as txt_file:
+                                txt_file.write(row)
 
                         self._cloud = True  # break loop
                     self._dt = time.time() - t  # running time
@@ -540,6 +593,7 @@ class Cloud:
 
         # update the pyqtgraph cloud
         self._scatter.setData(pos=self._dynamic_point_cloud, color=self._color, size=self._size)
+
         if self._color_overlay:
             self._scatter.setGLOptions('opaque')  # enables depth and disables blending
         else:
@@ -584,15 +638,71 @@ class Cloud:
         Handles the .pcd or .ply files visualization with Open3D
         :return None
         """
+        import matplotlib.pyplot as plt
         self._w.close()  # close pyqtgraph window application
         QtGui.QApplication.quit()  # close pyqtgraph application
-        vis = o3d.VisualizerWithEditing()  # start visualizer
-        vis.create_window(width=768, height=432)  # init window
-        # add file geometry
-        vis.add_geometry(o3d.read_point_cloud(os.path.join(self._dir_path, self._cloud_file)))
-        vis.run()  # run visualization
-        vis.destroy_window()  # destroy window after closing the point cloud
-        sys.exit()  # exit the application
+        cv2.destroyAllWindows()
+        # Check if file exists
+        if os.path.exists(os.path.join(self._dir_path, self._cloud_file)):
+            vis = o3d.Visualizer()  # start visualizer
+            vis.create_window(width=768, height=432)  # init window
+            # add file geometry
+            vis.add_geometry(o3d.read_point_cloud(os.path.join(self._dir_path, self._cloud_file)))
+            opt = vis.get_render_option()  # get options
+            opt.background_color = np.asarray([0, 0, 0])  # background to black
+            view_control = vis.get_view_control()
+            view_control.rotate(0, -360)
+            vis.run()  # run visualization
+            vis.destroy_window()  # destroy window after closing the point cloud
+            sys.exit()  # exit the application
+        else:
+            # create and save file
+            self.create_points()
+            self.export_to_ply()
+            vis = o3d.Visualizer()  # start visualizer
+            vis.create_window(width=768, height=432)  # init window
+            # add file geometry
+            vis.add_geometry(o3d.read_point_cloud(os.path.join(self._dir_path, self._cloud_file)))
+            opt = vis.get_render_option()  # get options
+            opt.background_color = np.asarray([0, 0, 0])  # background to black
+            view_control = vis.get_view_control()
+            view_control.rotate(0, -360)
+            vis.run()  # run visualization
+            vis.destroy_window()  # destroy window after closing the point cloud
+            sys.exit()  # exit the application
+
+    def export_to_ply(self):
+        """
+        Inspired by https://github.com/bponsler/kinectToPly
+        Writes a kinect point cloud into a .ply file
+        return None
+        """
+        # assert that the points have been created
+        assert self._dynamic_point_cloud is not None, "Point Cloud has not been initialized"
+        assert self._cloud_file != "", "Specify text filename"
+        # stack data
+        data = np.column_stack((self._dynamic_point_cloud, self._color))
+        data = data[np.all(data != float('-inf'), axis=1)]  # remove -inf
+        # header format of ply file
+        header_lines = ["ply",
+                        "format ascii 1.0",
+                        "comment generated by: python",
+                        "element vertex {}".format(int(len(data))),
+                        "property float x",
+                        "property float y",
+                        "property float z",
+                        "property uchar red",
+                        "property uchar green",
+                        "property uchar blue",
+                        "end_header"]
+        # convert to string
+        data = '\n'.join('{} {} {} {} {} {}'.format('%.2f' % x[0], '%.2f' % x[1], '%.2f' % x[2], int(x[3]), int(x[4]), int(x[5])) for x in data)
+        header = '\n'.join(line for line in header_lines) + '\n'
+        # write file
+        file = open(os.path.join(self._dir_path, self._cloud_file), 'w')
+        file.write(header)
+        file.write(data)
+        file.close()
 
 
 if __name__ == "__main__":
@@ -615,24 +725,28 @@ if __name__ == "__main__":
     If the files doesn't exist then you have to specify from which sensor camera you want 
     the pointcloud to be created and saved with that file name.
     """
+    """ TXT files """
     # pcl = Cloud(file='models/test_cloud_7.txt', depth=True)
     # pcl.visualize()
     # pcl = Cloud(file='models/test_cloud_8.txt', color=True)
     # pcl.visualize()
+    """ PLY files creation """
+    # pcl = Cloud(file='models/test_cloud_10.ply', depth=True)
+    # pcl = Cloud(file='models/test_cloud_10.ply', color=True)
     """
     For dynamically creating the PointCloud and viewing the PointCloud.
     """
     # rgb camera
-    # pcl = Cloud(dynamic=True, color=True)
+    # pcl = Cloud(dynamic=True, color=True, color_overlay=False)
     # pcl.visualize()
     # depth camera
-    # pcl = Cloud(dynamic=True, depth=True)
+    # pcl = Cloud(dynamic=True, depth=True, color_overlay=True)
     # pcl.visualize()
     # body index
-    # pcl = Cloud(dynamic=True, body=True)
+    # pcl = Cloud(dynamic=True, body=True, color_overlay=True)
     # pcl.visualize()
     # skeleton cloud
-    # pcl = Cloud(dynamic=True, skeleton=True)
+    #  pcl = Cloud(dynamic=True, skeleton=True, color_overlay=False)
     # pcl.visualize()
     """
     # You can also visualize the clouds simultaneously in any order, and apply the rgb frame color on top of them.s
@@ -643,5 +757,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False, color_overlay=False)
     # pcl.visualize()
-    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True, color_overlay=True)
-    pcl.visualize()
+    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True, color_overlay=True)
+    # pcl.visualize()
