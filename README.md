@@ -4,14 +4,14 @@ Creating real-time dynamic Point Clouds using PyQtGraph, Kinect 2 and the python
 ## Description
 The PointCloud.py file contains the main class to produce dynamic Point Clouds using the [PyKinect2](https://github.com/Kinect/PyKinect2) and the [PyQtGraph](https://github.com/pyqtgraph/pyqtgraph) libraries.
 The main file uses the numpy library that runs in C, thus it is fully optimized and can produce dynamic Point Clouds with up to 60+ frames, except for the point clouds produces by the RGB camera that run in 10+ frames.
-The library can also be used to create PointCloud and save them as a .txt file containing the world point coordinates as: 
+The library can also be used to create a PointCloud and save it as a .txt file containing the world point coordinates as: 
+.TXT file
 x, y, z
    .
    .
    .
 x, y, z
-
-It can also be used to view .ply or .pcd point cloud files. Instructions on how to use the main file are written in the **Instructions** chapter.
+It can also be used to view .ply or .pcd point cloud files or create PointClouds and save them as .ply or .pcd files. Instructions on how to use the main file are written in the **Instructions** chapter.
 In addition, there is a window with opencv track bars that can be used to dynamically change the color and the size of the points in the point cloud and the input flags.
 
 ## Requirements
