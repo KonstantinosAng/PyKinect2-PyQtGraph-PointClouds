@@ -65,12 +65,19 @@ pcl.visualize()
 # Creating a .ply PointCloud with the depth camera
 pcl = Cloud(file='models/cloud_test_1.ply', depth=True)
 
+# Creating a .pcd PointCloud with the depth camera
+pcl = Cloud(file='models/cloud_test_1.pcd', depth=True)
+
 # Creating a .txt PointCloud with the color camera
 pcl = Cloud(file='models/cloud_test_2.txt', color=True)
 pcl.visualize()
 
 # Creating a .ply PointCloud with the color camera
 pcl = Cloud(file='models/cloud_test_3.ply', color=True)
+
+# Creating a .pcd PointCloud with the color camera
+pcl = Cloud(file='models/cloud_test_3.pcd', color=True)
+
 ```
 For dynamically creating and viewing the PointCloud.
 ```
