@@ -114,6 +114,10 @@ pcl.visualize()
 In addition, there is a window with trackbars to change the input flags, the color and point size of the cloud without closing the app.
 
 ## Examples
+Run the main file, to see the functionality, as:
+```
+python PointCloud.py
+```
 <p align="center">
 <img src="img/image_9.png"/>
 <img src="img/image_1.png"/>
