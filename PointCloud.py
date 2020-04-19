@@ -253,7 +253,7 @@ class Cloud:
                                 self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
                                 self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
 
-                            if self._cloud_file[-4:] == '.ply':
+                            if self._cloud_file[-4:] == '.ply' or self._cloud_file[-4:] == '.pcd':
                                 # update color for .ply file only
                                 self._color = np.zeros((len(self._dynamic_point_cloud), 3), dtype=np.float32)
                                 # map color to depth frame
@@ -286,7 +286,7 @@ class Cloud:
                                 self._dynamic_point_cloud = self._dynamic_point_cloud[self._dynamic_point_cloud[:, 1] != 0]
                                 self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
 
-                            if self._cloud_file[-4:] == '.ply':
+                            if self._cloud_file[-4:] == '.ply' or self._cloud_file[-4:] == '.pcd':
                                 # update color for .ply file only
                                 self._color = np.zeros((len(self._dynamic_point_cloud), 3), dtype=np.float32)
                                 # get color image
@@ -658,7 +658,10 @@ class Cloud:
         else:
             # create and save file
             self.create_points()
-            self.export_to_ply()
+            if self._cloud_file[-4:] == '.ply':
+                self.export_to_ply()
+            if self._cloud_file[-4:] == '.pcd':
+                self.export_to_pcd()
             vis = o3d.Visualizer()  # start visualizer
             vis.create_window(width=768, height=432)  # init window
             # add file geometry
@@ -704,6 +707,36 @@ class Cloud:
         file.write(data)
         file.close()
 
+    def export_to_pcd(self):
+        # assert that the points have been created
+        assert self._dynamic_point_cloud is not None, "Point Cloud has not been initialized"
+        assert self._cloud_file != "", "Specify text filename"
+        # pack r/g/b to rgb
+        rgb = np.asarray([[int(int(r_g_b[0]) << 16 | int(r_g_b[1]) << 8 | int(r_g_b[0]))] for r_g_b in self._color])
+        # stack data
+        data = np.column_stack((self._dynamic_point_cloud, rgb))
+        data = data[np.all(data != float('-inf'), axis=1)]  # remove -inf
+        # header format of pcd file
+        header_lines = ["# .PCD v0.7 - Point Cloud Data file format",
+                        "VERSION 0.7",
+                        "FIELDS x y z rgb",
+                        "SIZE 4 4 4 4",
+                        "TYPE F F F U",
+                        "COUNT 1 1 1 1",
+                        "WIDTH {}".format(int(len(data))),
+                        "HEIGHT 1",
+                        "VIEWPOINT 0 0 0 1 0 0 0",
+                        "POINTS {}".format(int(len(data))),
+                        "DATA ascii"]
+        # convert to string
+        data = '\n'.join('{} {} {} {}'.format('%.2f' % x[0], '%.2f' % x[1], '%.2f' % x[2], int(x[3])) for x in data)
+        header = '\n'.join(line for line in header_lines) + '\n'
+        # write file
+        file = open(os.path.join(self._dir_path, self._cloud_file), 'w')
+        file.write(header)
+        file.write(data)
+        file.close()
+
 
 if __name__ == "__main__":
     """
@@ -733,6 +766,9 @@ if __name__ == "__main__":
     """ PLY files creation """
     # pcl = Cloud(file='models/test_cloud_10.ply', depth=True)
     # pcl = Cloud(file='models/test_cloud_10.ply', color=True)
+    """ PCD files creation """
+    # pcl = Cloud(file='models/test_cloud_10.pcd', depth=True)
+    # pcl = Cloud(file='models/test_cloud_10.pcd', color=True)
     """
     For dynamically creating the PointCloud and viewing the PointCloud.
     """
@@ -757,5 +793,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False, color_overlay=False)
     # pcl.visualize()
-    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True, color_overlay=True)
-    # pcl.visualize()
+    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True, color_overlay=True)
+    pcl.visualize()
