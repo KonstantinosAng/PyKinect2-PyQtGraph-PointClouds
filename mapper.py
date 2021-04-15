@@ -27,7 +27,7 @@ def get_coordinate_mapping_changed_event_data(kinect, waitableHandle_id):
 
 
 # Map Depth Space to Color Space (Image)
-def depth_2_color_space(kinect, depth_space_point, depth_frame_data, show=False):
+def depth_2_color_space(kinect, depth_space_point, depth_frame_data, show=False, return_aligned_image=False):
     """
 
     :param kinect: kinect class
@@ -39,33 +39,34 @@ def depth_2_color_space(kinect, depth_space_point, depth_frame_data, show=False)
     # Import here to optimize
     import numpy as np
     import ctypes
+    import cv2
     # Map Color to Depth Space
     color2depth_points_type = depth_space_point * np.int(1920 * 1080)
     color2depth_points = ctypes.cast(color2depth_points_type(), ctypes.POINTER(depth_space_point))
     kinect._mapper.MapColorFrameToDepthSpace(ctypes.c_uint(512 * 424), depth_frame_data, ctypes.c_uint(1920 * 1080), color2depth_points)
     # Where color_point = [xcolor, ycolor]
-    # depth_x = color2depth_points[color_point[1] * 1920 + color_point[0] - 1].x
-    # depth_y = color2depth_points[color_point[1] * 1920 + color_point[0] - 1].y
+    # color_x = color2depth_points[depth_point[1] * 1920 + color_point[0] - 1].x
+    # color_y = color2depth_points[depth_point[1] * 1920 + color_point[0] - 1].y
     depthXYs = np.copy(np.ctypeslib.as_array(color2depth_points, shape=(kinect.color_frame_desc.Height*kinect.color_frame_desc.Width,)))  # Convert ctype pointer to array
     depthXYs = depthXYs.view(np.float32).reshape(depthXYs.shape + (-1,))  # Convert struct array to regular numpy array https://stackoverflow.com/questions/5957380/convert-structured-array-to-regular-numpy-array
     depthXYs += 0.5
     depthXYs = depthXYs.reshape(kinect.color_frame_desc.Height, kinect.color_frame_desc.Width, 2).astype(np.int)
     depthXs = np.clip(depthXYs[:, :, 0], 0, kinect.depth_frame_desc.Width - 1)
     depthYs = np.clip(depthXYs[:, :, 1], 0, kinect.depth_frame_desc.Height - 1)
+    depth_frame = kinect.get_last_depth_frame()
+    depth_img = depth_frame.reshape((kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 1)).astype(np.uint16)
+    align_depth_img = np.zeros((1080, 1920, 4), dtype=np.uint16)
+    align_depth_img[:, :] = depth_img[depthYs, depthXs, :]
     if show:
-        import cv2
-        depth_frame = kinect.get_last_depth_frame()
-        depth_img = depth_frame.reshape((kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 1)).astype(np.uint8)
-        align_depth_img = np.zeros((1080, 1920, 4), dtype=np.uint8)
-        align_depth_img[:, :] = depth_img[depthYs, depthXs, :]
         cv2.imshow('Aligned Image', cv2.resize(cv2.flip(align_depth_img, 1), (int(1920 / 2.0), int(1080 / 2.0))))
-        cv2.waitKey(0)
-
+        cv2.waitKey(3000)
+    if return_aligned_image:
+        return align_depth_img
     return depthXs, depthYs
 
 
 # Map Color Space to Depth Space (Image)
-def color_2_depth_space(kinect, color_space_point, depth_frame_data, show=False):
+def color_2_depth_space(kinect, color_space_point, depth_frame_data, show=False, return_aligned_image=False):
     """
 
     :param kinect: kinect class
@@ -76,26 +77,28 @@ def color_2_depth_space(kinect, color_space_point, depth_frame_data, show=False)
     """
     import numpy as np
     import ctypes
+    import cv2
     # Map Depth to Color Space
     depth2color_points_type = color_space_point * np.int(512 * 424)
     depth2color_points = ctypes.cast(depth2color_points_type(), ctypes.POINTER(color_space_point))
     kinect._mapper.MapDepthFrameToColorSpace(ctypes.c_uint(512 * 424), depth_frame_data, kinect._depth_frame_data_capacity, depth2color_points)
-    # depth_x = color2depth_points[color_point[0] * 1920 + color_point[0] - 1].x
-    # depth_y = color2depth_points[color_point[0] * 1920 + color_point[0] - 1].y
+    # depth_x = depth2color_points[color_point[0] * 1920 + color_point[0] - 1].x
+    # depth_y = depth2color_points[color_point[0] * 1920 + color_point[0] - 1].y
     colorXYs = np.copy(np.ctypeslib.as_array(depth2color_points, shape=(kinect.depth_frame_desc.Height * kinect.depth_frame_desc.Width,)))  # Convert ctype pointer to array
     colorXYs = colorXYs.view(np.float32).reshape(colorXYs.shape + (-1,))  # Convert struct array to regular numpy array https://stackoverflow.com/questions/5957380/convert-structured-array-to-regular-numpy-array
     colorXYs += 0.5
     colorXYs = colorXYs.reshape(kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 2).astype(np.int)
     colorXs = np.clip(colorXYs[:, :, 0], 0, kinect.color_frame_desc.Width - 1)
     colorYs = np.clip(colorXYs[:, :, 1], 0, kinect.color_frame_desc.Height - 1)
+    color_frame = kinect.get_last_color_frame()
+    color_img = color_frame.reshape((kinect.color_frame_desc.Height, kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+    align_color_img = np.zeros((424, 512, 4), dtype=np.uint8)
+    align_color_img[:, :] = color_img[colorYs, colorXs, :]
     if show:
-        import cv2
-        color_frame = kinect.get_last_color_frame()
-        color_img = color_frame.reshape((kinect.color_frame_desc.Height, kinect.color_frame_desc.Width, 4)).astype(np.uint8)
-        align_color_img = np.zeros((424, 512, 4), dtype=np.uint8)
-        align_color_img[:, :] = color_img[colorYs, colorXs, :]
         cv2.imshow('img', cv2.flip(align_color_img, 1))
         cv2.waitKey(3000)
+    if return_aligned_image:
+        return align_color_img
     return colorXs, colorYs
 
 
@@ -483,7 +486,10 @@ if __name__ == '__main__':
             # print(intrinsics(kinect).FocalLengthX, intrinsics(kinect).FocalLengthY, intrinsics(kinect).PrincipalPointX, intrinsics(kinect).PrincipalPointY)
             # print(intrinsics(kinect).RadialDistortionFourthOrder, intrinsics(kinect).RadialDistortionSecondOrder, intrinsics(kinect).RadialDistortionSixthOrder)
             # print(world_point_2_depth(kinect, _CameraSpacePoint, [0.250, 0.325, 1]))
+            # img = depth_2_color_space(kinect, _DepthSpacePoint, kinect._depth_frame_data, show=False, return_aligned_image=True)
             depth_2_color_space(kinect, _DepthSpacePoint, kinect._depth_frame_data, show=True)
+            # img = color_2_depth_space(kinect, _ColorSpacePoint, kinect._depth_frame_data, show=True, return_aligned_image=True)
+
         # Quit using q
         if cv2.waitKey(1) & 0xff == ord('q'):
             break
