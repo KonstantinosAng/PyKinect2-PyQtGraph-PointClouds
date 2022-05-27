@@ -123,7 +123,7 @@ def color_point_2_depth_point(kinect, depth_space_point, depth_frame_data, color
     # Where color_point = [xcolor, ycolor]
     depth_x = color2depth_points[color_point[1] * 1920 + color_point[0] - 1].x
     depth_y = color2depth_points[color_point[1] * 1920 + color_point[0] - 1].y
-    return [int(depth_x), int(depth_y)]
+    return [int(depth_x) if depth_x != float('-inf') and depth_x != float('inf') else 0, int(depth_y) if depth_y != float('-inf') and depth_y != float('inf') else 0]
 
 
 # Return depth of object given the depth map coordinates
