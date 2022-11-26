@@ -53,15 +53,16 @@ def depth_2_color_space(kinect, depth_space_point, depth_frame_data, show=False,
     depthXYs = depthXYs.reshape(kinect.color_frame_desc.Height, kinect.color_frame_desc.Width, 2).astype(np.int)
     depthXs = np.clip(depthXYs[:, :, 0], 0, kinect.depth_frame_desc.Width - 1)
     depthYs = np.clip(depthXYs[:, :, 1], 0, kinect.depth_frame_desc.Height - 1)
-    depth_frame = kinect.get_last_depth_frame()
-    depth_img = depth_frame.reshape((kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 1)).astype(np.uint16)
-    align_depth_img = np.zeros((1080, 1920, 4), dtype=np.uint16)
-    align_depth_img[:, :] = depth_img[depthYs, depthXs, :]
-    if show:
-        cv2.imshow('Aligned Image', cv2.resize(cv2.flip(align_depth_img, 1), (int(1920 / 2.0), int(1080 / 2.0))))
-        cv2.waitKey(3000)
-    if return_aligned_image:
-        return align_depth_img
+    if (show or return_aligned_image):
+        depth_frame = kinect.get_last_depth_frame()
+        depth_img = depth_frame.reshape((kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 1)).astype(np.uint16)
+        align_depth_img = np.zeros((1080, 1920, 4), dtype=np.uint16)
+        align_depth_img[:, :] = depth_img[depthYs, depthXs, :]
+        if show:
+            cv2.imshow('Aligned Image', cv2.resize(cv2.flip(align_depth_img, 1), (int(1920 / 2.0), int(1080 / 2.0))))
+            cv2.waitKey(3000)
+        if return_aligned_image:
+            return align_depth_img
     return depthXs, depthYs
 
 
@@ -90,15 +91,16 @@ def color_2_depth_space(kinect, color_space_point, depth_frame_data, show=False,
     colorXYs = colorXYs.reshape(kinect.depth_frame_desc.Height, kinect.depth_frame_desc.Width, 2).astype(np.int)
     colorXs = np.clip(colorXYs[:, :, 0], 0, kinect.color_frame_desc.Width - 1)
     colorYs = np.clip(colorXYs[:, :, 1], 0, kinect.color_frame_desc.Height - 1)
-    color_frame = kinect.get_last_color_frame()
-    color_img = color_frame.reshape((kinect.color_frame_desc.Height, kinect.color_frame_desc.Width, 4)).astype(np.uint8)
-    align_color_img = np.zeros((424, 512, 4), dtype=np.uint8)
-    align_color_img[:, :] = color_img[colorYs, colorXs, :]
-    if show:
-        cv2.imshow('img', cv2.flip(align_color_img, 1))
-        cv2.waitKey(3000)
-    if return_aligned_image:
-        return align_color_img
+    if show or return_aligned_image:
+        color_frame = kinect.get_last_color_frame()
+        color_img = color_frame.reshape((kinect.color_frame_desc.Height, kinect.color_frame_desc.Width, 4)).astype(np.uint8)
+        align_color_img = np.zeros((424, 512, 4), dtype=np.uint8)
+        align_color_img[:, :] = color_img[colorYs, colorXs, :]
+        if show:
+            cv2.imshow('img', cv2.flip(align_color_img, 1))
+            cv2.waitKey(3000)
+        if return_aligned_image:
+            return align_color_img
     return colorXs, colorYs
 
 
